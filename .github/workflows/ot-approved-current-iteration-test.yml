@@ -182,8 +182,8 @@ jobs:
               )
 
               $patchUrls = @(
-                  "$ProjectBase/_apis/wit/workitems/${WorkItemId}?api-version=7.1",
-                  "$OrgBase/_apis/wit/workitems/${WorkItemId}?api-version=7.1"
+                  ("{0}/_apis/wit/workitems/{1}?api-version=7.1" -f $ProjectBase, $WorkItemId),
+                  ("{0}/_apis/wit/workitems/{1}?api-version=7.1" -f $OrgBase, $WorkItemId)
               )
 
               $lastError = $null
@@ -219,6 +219,8 @@ jobs:
           $teams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
 
           Write-Host "Target tag: $targetTag"
+          Write-Host "Org: $orgBase"
+          Write-Host "Project: $($env:ADO_PROJECT)"
           Write-Host "Timezone: $($env:TIMEZONE_ID)"
           Write-Host "Local now: $($timeContext.LocalNow)"
           Write-Host "Apply changes: $apply"
@@ -327,6 +329,22 @@ jobs:
                           $headers = @{ Authorization = "Basic $basic" }
 
                           Invoke-WorkItemPatch -WorkItemId $workItemId -PatchBody $patchBody -ProjectBase $projectBase -OrgBase $orgBase -Headers $headers
+
+                          $verifyUrl = ("{0}/_apis/wit/workitems/{1}?fields=System.Tags&api-version=7.1" -f $projectBase, $workItemId)
+                          $verifyItem = Invoke-AdoApi -Method "GET" -Url $verifyUrl
+                          $verifiedTags = ""
+
+                          if ($verifyItem.fields."System.Tags") {
+                              $verifiedTags = [string]$verifyItem.fields."System.Tags"
+                          }
+
+                          $verifyTagResult = Remove-TargetTag -TagString $verifiedTags -TargetTag $targetTag
+
+                          if ($verifyTagResult.Changed) {
+                              throw "Verification failed: tag still present after PATCH. VerifiedTags=$verifiedTags"
+                          }
+
+                          $change | Add-Member -MemberType NoteProperty -Name VerifiedTags -Value $verifiedTags -Force
                           $totalWorkItemsUpdated++
                       }
                       catch {
