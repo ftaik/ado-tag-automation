@@ -179,7 +179,8 @@ jobs:
                       $Ids.Count - 1
                   )
 
-                  $chunks += ,($Ids[$i..$end])
+                  $slice = @($Ids[$i..$end])
+                  $chunks += ,$slice
               }
 
               return $chunks
@@ -318,7 +319,7 @@ jobs:
 
               foreach ($chunk in $chunks) {
                   $batchBody = @{
-                      ids = $chunk
+                      ids = @($chunk)
                       fields = @(
                           "System.Tags"
                           "System.IterationPath"
