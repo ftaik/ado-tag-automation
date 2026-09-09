@@ -1,52 +1,41 @@
-name: Test - List OT-approved in current iterations
+name: Test - Remove test tag from current iterations
 
 on:
   workflow_dispatch:
+    inputs:
+      apply_changes:
+        description: Apply updates (false = dry run)
+        required: true
+        type: boolean
+        default: false
 
 jobs:
-  list-ot-approved-current:
+  remove-test-tag-current:
     runs-on: ubuntu-latest
-
     env:
-            ADO_ORG: "${{ secrets.ADO_ORG }}"
-            ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
-            ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
-            ADO_PAT: "${{ secrets.ADO_PAT }}"
-            TARGET_TAG: "${{ secrets.TARGET_TAG }}"
-            TIMEZONE_ID: "${{ secrets.TIMEZONE_ID }}"
-
+      ADO_ORG: "${{ secrets.ADO_ORG }}"
+      ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
+      ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
+      ADO_PAT: "${{ secrets.ADO_PAT }}"
+      TIMEZONE_ID: "${{ secrets.TIMEZONE_ID }}"
     steps:
       - name: Validate inputs
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:ADO_ORG)) {
-              throw "Missing secret ADO_ORG"
-          }
+          if ([string]::IsNullOrWhiteSpace($env:ADO_ORG)) { throw "Missing secret ADO_ORG" }
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PROJECT)) { throw "Missing secret ADO_PROJECT" }
+          if ([string]::IsNullOrWhiteSpace($env:ADO_TEAMS)) { throw "Missing secret ADO_TEAMS" }
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PAT)) { throw "Missing secret ADO_PAT" }
+          if ([string]::IsNullOrWhiteSpace($env:TIMEZONE_ID)) { $env:TIMEZONE_ID = "UTC" }
 
-          if ([string]::IsNullOrWhiteSpace($env:ADO_PROJECT)) {
-              throw "Missing secret ADO_PROJECT"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($env:ADO_TEAMS)) {
-              throw "Missing secret ADO_TEAMS"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($env:ADO_PAT)) {
-              throw "Missing secret ADO_PAT"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($env:TARGET_TAG)) {
-              $env:TARGET_TAG = "OT-approved"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($env:TIMEZONE_ID)) {
-              $env:TIMEZONE_ID = "UTC"
-          }
-
-      - name: List OT-approved from current iterations
+      - name: Remove test tag from current iterations
         shell: pwsh
+        env:
+          APPLY_CHANGES: "${{ inputs.apply_changes }}"
         run: |
           $ErrorActionPreference = "Stop"
+          $targetTag = "test tag"
+          $apply = "$env:APPLY_CHANGES".ToLowerInvariant() -eq "true"
 
           function Invoke-AdoApi {
               param(
@@ -55,54 +44,18 @@ jobs:
                   [object]$Body = $null
               )
 
-              $basic = [Convert]::ToBase64String(
-                  [Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT")
-              )
-
-              $headers = @{
-                  Authorization = "Basic $basic"
-              }
+              $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
+              $headers = @{ Authorization = "Basic $basic" }
 
               if ($null -ne $Body) {
-                  return Invoke-RestMethod `
-                      -Method $Method `
-                      -Uri $Url `
-                      -Headers $headers `
-                      -ContentType "application/json" `
-                      -Body ($Body | ConvertTo-Json -Depth 20)
+                  return Invoke-RestMethod -Method $Method -Uri $Url -Headers $headers -ContentType "application/json" -Body ($Body | ConvertTo-Json -Depth 20)
               }
 
-              return Invoke-RestMethod `
-                  -Method $Method `
-                  -Uri $Url `
-                  -Headers $headers
-          }
-
-          function Get-ConfiguredTeams {
-              param(
-                  [string]$RawTeams
-              )
-
-              $teams = $RawTeams -split "[;,]" |
-                  ForEach-Object {
-                      $_.Trim()
-                  } |
-                  Where-Object {
-                      $_ -ne ""
-                  } |
-                  Sort-Object -Unique
-
-              if (-not $teams -or $teams.Count -eq 0) {
-                  throw "Secret ADO_TEAMS is empty after parsing."
-              }
-
-              return $teams
+              return Invoke-RestMethod -Method $Method -Uri $Url -Headers $headers
           }
 
           function Get-TimeContext {
-              param(
-                  [string]$TimezoneId
-              )
+              param([string]$TimezoneId)
 
               $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimezoneId)
               $nowUtc = [DateTime]::UtcNow
@@ -114,6 +67,21 @@ jobs:
               }
           }
 
+          function Get-ConfiguredTeams {
+              param([string]$RawTeams)
+
+              $teams = $RawTeams -split "[;,]" |
+                  ForEach-Object { $_.Trim() } |
+                  Where-Object { $_ -ne "" } |
+                  Sort-Object -Unique
+
+              if (-not $teams -or $teams.Count -eq 0) {
+                  throw "Secret ADO_TEAMS is empty after parsing."
+              }
+
+              return $teams
+          }
+
           function Get-TeamIterations {
               param(
                   [string]$Base,
@@ -121,11 +89,8 @@ jobs:
               )
 
               $encodedTeam = [System.Uri]::EscapeDataString($Team)
-              $iterationsUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?api-version=7.1-preview.1"
-
-              $response = Invoke-AdoApi `
-                  -Method "GET" `
-                  -Url $iterationsUrl
+              $url = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?api-version=7.1-preview.1"
+              $response = Invoke-AdoApi -Method "GET" -Url $url
 
               if (-not $response.value -or $response.value.Count -eq 0) {
                   return @()
@@ -134,42 +99,17 @@ jobs:
               return @(
                   $response.value |
                       Where-Object {
-                          $_.attributes -and
-                          $_.attributes.startDate -and
-                          $_.attributes.finishDate
+                          $_.attributes -and $_.attributes.startDate -and $_.attributes.finishDate
                       } |
                       ForEach-Object {
                           [pscustomobject]@{
-                              Team       = $Team
-                              Path       = $_.path
-                              Name       = $_.name
-                              StartDate  = [DateTime]$_.attributes.startDate
+                              Team = $Team
+                              Path = $_.path
+                              StartDate = [DateTime]$_.attributes.startDate
                               FinishDate = [DateTime]$_.attributes.finishDate
                           }
                       }
               )
-          }
-
-          function Get-NextIterationForTeam {
-              param(
-                  [object[]]$TeamIterations,
-                  [DateTime]$LocalDate
-              )
-
-              $futureIterationsWithDates = @(
-                  $TeamIterations |
-                      Where-Object {
-                          $_.StartDate.Date -gt $LocalDate.Date
-                      }
-              )
-
-              if ($futureIterationsWithDates.Count -eq 0) {
-                  return $null
-              }
-
-              return $futureIterationsWithDates |
-                  Sort-Object StartDate |
-                  Select-Object -First 1
           }
 
           function Get-CurrentIterationsForTeam {
@@ -181,10 +121,38 @@ jobs:
               return @(
                   $TeamIterations |
                       Where-Object {
-                          $_.StartDate.Date -le $LocalDate.Date -and
-                          $_.FinishDate.Date -ge $LocalDate.Date
+                          $_.StartDate.Date -le $LocalDate.Date -and $_.FinishDate.Date -ge $LocalDate.Date
                       }
               )
+          }
+
+          function Remove-TargetTag {
+              param(
+                  [string]$TagString,
+                  [string]$TargetTag
+              )
+
+              if ([string]::IsNullOrWhiteSpace($TagString)) {
+                  return @{ Changed = $false; NewTagString = "" }
+              }
+
+              $sourceTags = $TagString.Split(";") |
+                  ForEach-Object { $_.Trim() } |
+                  Where-Object { $_ -ne "" }
+
+              $resultTags = @()
+              $changed = $false
+
+              foreach ($tag in $sourceTags) {
+                  if ($tag.Equals($TargetTag, [System.StringComparison]::OrdinalIgnoreCase)) {
+                      $changed = $true
+                  }
+                  else {
+                      $resultTags += $tag
+                  }
+              }
+
+              return @{ Changed = $changed; NewTagString = ($resultTags -join "; ") }
           }
 
           function Split-IntoChunks {
@@ -196,11 +164,7 @@ jobs:
               $chunks = @()
 
               for ($i = 0; $i -lt $Ids.Count; $i += $ChunkSize) {
-                  $end = [Math]::Min(
-                      $i + $ChunkSize - 1,
-                      $Ids.Count - 1
-                  )
-
+                  $end = [Math]::Min($i + $ChunkSize - 1, $Ids.Count - 1)
                   $slice = @($Ids[$i..$end])
                   $chunks += ,$slice
               }
@@ -208,193 +172,128 @@ jobs:
               return $chunks
           }
 
-          function Has-TargetTag {
-              param(
-                  [string]$TagString,
-                  [string]$TargetTag
-              )
-
-              if ([string]::IsNullOrWhiteSpace($TagString)) {
-                  return $false
-              }
-
-              $tags = $TagString.Split(";") |
-                  ForEach-Object {
-                      $_.Trim()
-                  } |
-                  Where-Object {
-                      $_ -ne ""
-                  }
-
-              foreach ($tag in $tags) {
-                  if ($tag.Equals($TargetTag, [System.StringComparison]::OrdinalIgnoreCase)) {
-                      return $true
-                  }
-              }
-
-              return $false
-          }
-
           $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
           $timeContext = Get-TimeContext -TimezoneId $env:TIMEZONE_ID
           $localDate = $timeContext.LocalDate
-          $configuredTeams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
+          $teams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
 
-          Write-Host "Target tag: $($env:TARGET_TAG)"
+          Write-Host "Target tag: $targetTag"
           Write-Host "Timezone: $($env:TIMEZONE_ID)"
           Write-Host "Local now: $($timeContext.LocalNow)"
-          Write-Host "Configured teams:"
-
-          $configuredTeams |
-              ForEach-Object {
-                  Write-Host "- $_"
-              }
+          Write-Host "Apply changes: $apply"
 
           $allCurrentIterations = @()
-          $nextIterationByTeam = @{}
 
-          foreach ($team in $configuredTeams) {
+          foreach ($team in $teams) {
               Write-Host "Checking configured iterations for team: $team"
-
-              $teamIterations = Get-TeamIterations `
-                  -Base $base `
-                  -Team $team
+              $teamIterations = Get-TeamIterations -Base $base -Team $team
 
               if (-not $teamIterations -or $teamIterations.Count -eq 0) {
                   Write-Host "No configured iterations with dates found for team: $team"
                   continue
               }
 
-              $allCurrentIterations += Get-CurrentIterationsForTeam `
-                  -TeamIterations $teamIterations `
-                  -LocalDate $localDate
-
-              $nextIteration = Get-NextIterationForTeam `
-                  -TeamIterations $teamIterations `
-                  -LocalDate $localDate
-
-              if ($null -eq $nextIteration) {
-                  Write-Host "No future iteration with start date found for team: $team"
-                  continue
-              }
-
-              $nextIterationByTeam[$team] = $nextIteration
-
-              Write-Host "Next iteration for ${team}: Path=$($nextIteration.Path) | StartDate=$($nextIteration.StartDate.ToString('yyyy-MM-dd'))"
+              $allCurrentIterations += Get-CurrentIterationsForTeam -TeamIterations $teamIterations -LocalDate $localDate
           }
 
-          $targetIterations = $allCurrentIterations |
-              Sort-Object Path -Unique
+          $targetIterations = $allCurrentIterations | Sort-Object Path -Unique
 
           if (-not $targetIterations -or $targetIterations.Count -eq 0) {
               Write-Host "No current iterations found for configured teams."
-              "[]" | Out-File -FilePath ot-approved-current-iteration.json -Encoding utf8
+              "[]" | Out-File -FilePath test-tag-current-iteration-removals.json -Encoding utf8
               exit 0
           }
 
           Write-Host "Current iterations:"
-
-          $targetIterations |
-              ForEach-Object {
-                  Write-Host "- Team=$($_.Team) | Path=$($_.Path)"
-              }
+          $targetIterations | ForEach-Object { Write-Host "- Team=$($_.Team) | Path=$($_.Path)" }
 
           $totalWorkItemsScanned = 0
-          $matches = @()
+          $totalWorkItemsUpdated = 0
+          $totalFailures = 0
+          $changes = @()
 
           foreach ($iteration in $targetIterations) {
               $safePath = $iteration.Path.Replace("'", "''")
-
               $wiqlBody = @{
-                  query = @"
-          SELECT [System.Id]
-          FROM WorkItems
-          WHERE [System.TeamProject] = '$($env:ADO_PROJECT)'
-          AND [System.IterationPath] = '$safePath'
-          "@
+                  query = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '$($env:ADO_PROJECT)' AND [System.IterationPath] = '$safePath'"
               }
 
               $wiqlUrl = "$base/_apis/wit/wiql?api-version=7.1"
-
-              $wiqlResult = Invoke-AdoApi `
-                  -Method "POST" `
-                  -Url $wiqlUrl `
-                  -Body $wiqlBody
+              $wiqlResult = Invoke-AdoApi -Method "POST" -Url $wiqlUrl -Body $wiqlBody
 
               if (-not $wiqlResult.workItems -or $wiqlResult.workItems.Count -eq 0) {
                   Write-Host "No work items in $($iteration.Path)"
                   continue
               }
 
-              $ids = @(
-                  $wiqlResult.workItems |
-                      ForEach-Object {
-                          [int]$_.id
-                      }
-              )
-
+              $ids = @($wiqlResult.workItems | ForEach-Object { [int]$_.id })
               $totalWorkItemsScanned += $ids.Count
               $chunks = Split-IntoChunks -Ids $ids -ChunkSize 200
 
               foreach ($chunk in $chunks) {
                   $batchBody = @{
                       ids = @($chunk)
-                      fields = @(
-                          "System.Title"
-                          "System.WorkItemType"
-                          "System.State"
-                          "System.Tags"
-                          "System.IterationPath"
-                      )
+                      fields = @("System.Title", "System.WorkItemType", "System.State", "System.Tags", "System.IterationPath")
                   }
 
                   $batchUrl = "$base/_apis/wit/workitemsbatch?api-version=7.1"
-
-                  $batchResult = Invoke-AdoApi `
-                      -Method "POST" `
-                      -Url $batchUrl `
-                      -Body $batchBody
+                  $batchResult = Invoke-AdoApi -Method "POST" -Url $batchUrl -Body $batchBody
 
                   foreach ($wi in $batchResult.value) {
-                      $currentTags = ""
+                      try {
+                          $workItemId = [int]$wi.id
+                          $currentTags = ""
 
-                      if ($wi.fields."System.Tags") {
-                          $currentTags = [string]$wi.fields."System.Tags"
-                      }
+                          if ($wi.fields."System.Tags") {
+                              $currentTags = [string]$wi.fields."System.Tags"
+                          }
 
-                      if (-not (Has-TargetTag -TagString $currentTags -TargetTag $env:TARGET_TAG)) {
-                          continue
-                      }
+                          $tagResult = Remove-TargetTag -TagString $currentTags -TargetTag $targetTag
 
-                      $match = [pscustomobject]@{
-                          WorkItemId    = [int]$wi.id
-                          Team          = $iteration.Team
-                          IterationPath = [string]$wi.fields."System.IterationPath"
-                          NextIterationPath = $(
-                              if ($nextIterationByTeam.ContainsKey($iteration.Team)) {
-                                  $nextIterationByTeam[$iteration.Team].Path
-                              }
-                              else {
-                                  ""
-                              }
+                          if (-not $tagResult.Changed) {
+                              continue
+                          }
+
+                          $newTags = $tagResult.NewTagString
+
+                          $change = [pscustomobject]@{
+                              WorkItemId = $workItemId
+                              Team = $iteration.Team
+                              IterationPath = [string]$wi.fields."System.IterationPath"
+                              Type = [string]$wi.fields."System.WorkItemType"
+                              State = [string]$wi.fields."System.State"
+                              Title = [string]$wi.fields."System.Title"
+                              OldTags = $currentTags
+                              NewTags = $newTags
+                              Mode = $(if ($apply) { "apply" } else { "dry-run" })
+                          }
+
+                          $changes += $change
+                          Write-Host "Tag match: ID=$($change.WorkItemId) | Team=$($change.Team) | Title=$($change.Title)"
+
+                          if (-not $apply) {
+                              continue
+                          }
+
+                          $detailUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+                          $detail = Invoke-AdoApi -Method "GET" -Url $detailUrl
+
+                          $patchBody = @(
+                              @{ op = "test"; path = "/rev"; value = [int]$detail.rev },
+                              @{ op = "add"; path = "/fields/System.Tags"; value = $newTags }
                           )
-                          NextIterationStartDate = $(
-                              if ($nextIterationByTeam.ContainsKey($iteration.Team)) {
-                                  $nextIterationByTeam[$iteration.Team].StartDate.ToString("yyyy-MM-dd")
-                              }
-                              else {
-                                  ""
-                              }
-                          )
-                          Type          = [string]$wi.fields."System.WorkItemType"
-                          State         = [string]$wi.fields."System.State"
-                          Title         = [string]$wi.fields."System.Title"
-                          Tags          = $currentTags
+
+                          $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
+                          $headers = @{ Authorization = "Basic $basic" }
+                          $patchUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+
+                          Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $headers -ContentType "application/json-patch+json" -Body ($patchBody | ConvertTo-Json -Depth 20) | Out-Null
+                          $totalWorkItemsUpdated++
                       }
-
-                      $matches += $match
-
-                      Write-Host "OT-approved found: ID=$($match.WorkItemId) | Team=$($match.Team) | NextStart=$($match.NextIterationStartDate) | Type=$($match.Type) | State=$($match.State) | Title=$($match.Title)"
+                      catch {
+                          $totalFailures++
+                          Write-Host "Failed work item id $($wi.id): $($_.Exception.Message)"
+                      }
                   }
               }
           }
@@ -402,18 +301,17 @@ jobs:
           Write-Host ""
           Write-Host "Run summary"
           Write-Host "Scanned: $totalWorkItemsScanned"
-          Write-Host "Matches: $($matches.Count)"
+          Write-Host "Candidates (tag found): $($changes.Count)"
+          Write-Host "Updated: $totalWorkItemsUpdated"
+          Write-Host "Failures: $totalFailures"
 
-          $matches |
-              ConvertTo-Json -Depth 20 |
-              Out-File -FilePath ot-approved-current-iteration.json -Encoding utf8
-
-          Write-Host "Saved ot-approved-current-iteration.json"
+          $changes | ConvertTo-Json -Depth 20 | Out-File -FilePath test-tag-current-iteration-removals.json -Encoding utf8
+          Write-Host "Saved test-tag-current-iteration-removals.json"
 
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ot-approved-current-iteration
-          path: ot-approved-current-iteration.json
+          name: test-tag-current-iteration-removals
+          path: test-tag-current-iteration-removals.json
           if-no-files-found: error
