@@ -236,7 +236,8 @@ jobs:
           Write-Host "Target date (tomorrow): $($tomorrowDate.ToString('yyyy-MM-dd'))"
           Write-Host "Apply changes: $apply"
 
-          $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
+          $orgBase = $env:ADO_ORG.TrimEnd('/')
+          $projectBase = "$orgBase/$($env:ADO_PROJECT)"
 
           $configuredTeams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
 
@@ -252,7 +253,7 @@ jobs:
               Write-Host "Checking iterations for team: $team"
 
               $teamIterations += Get-TeamIterationsStartingTomorrow `
-                  -Base $base `
+                  -Base $projectBase `
                   -Team $team `
                   -TomorrowDate $tomorrowDate
           }
@@ -289,7 +290,7 @@ jobs:
           "@
               }
 
-              $wiqlUrl = "$base/_apis/wit/wiql?api-version=7.1"
+              $wiqlUrl = "$projectBase/_apis/wit/wiql?api-version=7.1"
 
               $wiqlResult = Invoke-AdoApi `
                   -Method "POST" `
@@ -323,10 +324,11 @@ jobs:
                       fields = @(
                           "System.Tags"
                           "System.IterationPath"
+                          "System.Rev"
                       )
                   }
 
-                  $batchUrl = "$base/_apis/wit/workitemsbatch?api-version=7.1"
+                  $batchUrl = "$projectBase/_apis/wit/workitemsbatch?api-version=7.1"
 
                   $batchResult = Invoke-AdoApi `
                       -Method "POST" `
@@ -371,17 +373,13 @@ jobs:
                               continue
                           }
 
-                          $detailUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
-
-                          $detail = Invoke-AdoApi `
-                              -Method "GET" `
-                              -Url $detailUrl
+                          $workItemRev = [int]$wi.fields."System.Rev"
 
                           $patchBody = @(
                               @{
                                   op    = "test"
                                   path  = "/rev"
-                                  value = [int]$detail.rev
+                                  value = $workItemRev
                               },
                               @{
                                   op    = "add"
@@ -398,7 +396,7 @@ jobs:
                               Authorization = "Basic $basic"
                           }
 
-                          $patchUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+                          $patchUrl = "$orgBase/_apis/wit/workitems/$workItemId?api-version=7.1"
 
                           Invoke-RestMethod `
                               -Method PATCH `

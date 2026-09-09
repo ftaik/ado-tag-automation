@@ -172,7 +172,8 @@ jobs:
               return $chunks
           }
 
-          $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
+          $orgBase = $env:ADO_ORG.TrimEnd('/')
+          $projectBase = "$orgBase/$($env:ADO_PROJECT)"
           $timeContext = Get-TimeContext -TimezoneId $env:TIMEZONE_ID
           $localDate = $timeContext.LocalDate
           $teams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
@@ -186,7 +187,7 @@ jobs:
 
           foreach ($team in $teams) {
               Write-Host "Checking configured iterations for team: $team"
-              $teamIterations = Get-TeamIterations -Base $base -Team $team
+              $teamIterations = Get-TeamIterations -Base $projectBase -Team $team
 
               if (-not $teamIterations -or $teamIterations.Count -eq 0) {
                   Write-Host "No configured iterations with dates found for team: $team"
@@ -218,7 +219,7 @@ jobs:
                   query = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '$($env:ADO_PROJECT)' AND [System.IterationPath] = '$safePath'"
               }
 
-              $wiqlUrl = "$base/_apis/wit/wiql?api-version=7.1"
+              $wiqlUrl = "$projectBase/_apis/wit/wiql?api-version=7.1"
               $wiqlResult = Invoke-AdoApi -Method "POST" -Url $wiqlUrl -Body $wiqlBody
 
               if (-not $wiqlResult.workItems -or $wiqlResult.workItems.Count -eq 0) {
@@ -233,10 +234,10 @@ jobs:
               foreach ($chunk in $chunks) {
                   $batchBody = @{
                       ids = @($chunk)
-                      fields = @("System.Title", "System.WorkItemType", "System.State", "System.Tags", "System.IterationPath")
+                      fields = @("System.Title", "System.WorkItemType", "System.State", "System.Tags", "System.IterationPath", "System.Rev")
                   }
 
-                  $batchUrl = "$base/_apis/wit/workitemsbatch?api-version=7.1"
+                  $batchUrl = "$projectBase/_apis/wit/workitemsbatch?api-version=7.1"
                   $batchResult = Invoke-AdoApi -Method "POST" -Url $batchUrl -Body $batchBody
 
                   foreach ($wi in $batchResult.value) {
@@ -275,17 +276,16 @@ jobs:
                               continue
                           }
 
-                          $detailUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
-                          $detail = Invoke-AdoApi -Method "GET" -Url $detailUrl
+                          $workItemRev = [int]$wi.fields."System.Rev"
 
                           $patchBody = @(
-                              @{ op = "test"; path = "/rev"; value = [int]$detail.rev },
+                              @{ op = "test"; path = "/rev"; value = $workItemRev },
                               @{ op = "add"; path = "/fields/System.Tags"; value = $newTags }
                           )
 
                           $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
                           $headers = @{ Authorization = "Basic $basic" }
-                          $patchUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+                          $patchUrl = "$orgBase/_apis/wit/workitems/$workItemId?api-version=7.1"
 
                           Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $headers -ContentType "application/json-patch+json" -Body ($patchBody | ConvertTo-Json -Depth 20) | Out-Null
                           $totalWorkItemsUpdated++
