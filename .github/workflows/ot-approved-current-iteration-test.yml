@@ -123,6 +123,47 @@ jobs:
               )
           }
 
+          function Get-NextIterationForTeam {
+              param(
+                  [string]$Base,
+                  [string]$Team
+              )
+
+              $encodedTeam = [System.Uri]::EscapeDataString($Team)
+              $futureUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?`$timeframe=future&api-version=7.1-preview.1"
+
+              $response = Invoke-AdoApi `
+                  -Method "GET" `
+                  -Url $futureUrl
+
+              if (-not $response.value -or $response.value.Count -eq 0) {
+                  return $null
+              }
+
+              $futureIterationsWithDates = @(
+                  $response.value |
+                      Where-Object {
+                          $_.attributes -and $_.attributes.startDate
+                      } |
+                      ForEach-Object {
+                          [pscustomobject]@{
+                              Team = $Team
+                              Path = $_.path
+                              Name = $_.name
+                              StartDate = [DateTime]$_.attributes.startDate
+                          }
+                      }
+              )
+
+              if (-not $futureIterationsWithDates -or $futureIterationsWithDates.Count -eq 0) {
+                  return $null
+              }
+
+              return $futureIterationsWithDates |
+                  Sort-Object StartDate |
+                  Select-Object -First 1
+          }
+
           function Split-IntoChunks {
               param(
                   [int[]]$Ids,
@@ -182,6 +223,7 @@ jobs:
               }
 
           $allCurrentIterations = @()
+          $nextIterationByTeam = @{}
 
           foreach ($team in $configuredTeams) {
               Write-Host "Checking current iteration for team: $team"
@@ -189,6 +231,19 @@ jobs:
               $allCurrentIterations += Get-CurrentIterationsForTeam `
                   -Base $base `
                   -Team $team
+
+              $nextIteration = Get-NextIterationForTeam `
+                  -Base $base `
+                  -Team $team
+
+              if ($null -eq $nextIteration) {
+                  Write-Host "No future iteration with start date found for team: $team"
+                  continue
+              }
+
+              $nextIterationByTeam[$team] = $nextIteration
+
+              Write-Host "Next iteration for $team: Path=$($nextIteration.Path) | StartDate=$($nextIteration.StartDate.ToString('yyyy-MM-dd'))"
           }
 
           $targetIterations = $allCurrentIterations |
@@ -278,6 +333,22 @@ jobs:
                           WorkItemId    = [int]$wi.id
                           Team          = $iteration.Team
                           IterationPath = [string]$wi.fields."System.IterationPath"
+                          NextIterationPath = $(
+                              if ($nextIterationByTeam.ContainsKey($iteration.Team)) {
+                                  $nextIterationByTeam[$iteration.Team].Path
+                              }
+                              else {
+                                  ""
+                              }
+                          )
+                          NextIterationStartDate = $(
+                              if ($nextIterationByTeam.ContainsKey($iteration.Team)) {
+                                  $nextIterationByTeam[$iteration.Team].StartDate.ToString("yyyy-MM-dd")
+                              }
+                              else {
+                                  ""
+                              }
+                          )
                           Type          = [string]$wi.fields."System.WorkItemType"
                           State         = [string]$wi.fields."System.State"
                           Title         = [string]$wi.fields."System.Title"
@@ -286,7 +357,7 @@ jobs:
 
                       $matches += $match
 
-                      Write-Host "OT-approved found: ID=$($match.WorkItemId) | Team=$($match.Team) | Type=$($match.Type) | State=$($match.State) | Title=$($match.Title)"
+                      Write-Host "OT-approved found: ID=$($match.WorkItemId) | Team=$($match.Team) | NextStart=$($match.NextIterationStartDate) | Type=$($match.Type) | State=$($match.State) | Title=$($match.Title)"
                   }
               }
           }
