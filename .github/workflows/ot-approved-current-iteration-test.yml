@@ -8,11 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ADO_ORG: "${{ secrets.ADO_ORG }}"
-      ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
-      ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
-      ADO_PAT: "${{ secrets.ADO_PAT }}"
-      TARGET_TAG: "${{ secrets.TARGET_TAG }}"
+            ADO_ORG: "${{ secrets.ADO_ORG }}"
+            ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
+            ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
+            ADO_PAT: "${{ secrets.ADO_PAT }}"
+            TARGET_TAG: "${{ secrets.TARGET_TAG }}"
+            TIMEZONE_ID: "${{ secrets.TIMEZONE_ID }}"
 
     steps:
       - name: Validate inputs
@@ -36,6 +37,10 @@ jobs:
 
           if ([string]::IsNullOrWhiteSpace($env:TARGET_TAG)) {
               $env:TARGET_TAG = "OT-approved"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:TIMEZONE_ID)) {
+              $env:TIMEZONE_ID = "UTC"
           }
 
       - name: List OT-approved from current iterations
@@ -94,14 +99,29 @@ jobs:
               return $teams
           }
 
-          function Get-CurrentIterationsForTeam {
+          function Get-TimeContext {
+              param(
+                  [string]$TimezoneId
+              )
+
+              $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimezoneId)
+              $nowUtc = [DateTime]::UtcNow
+              $localNow = [System.TimeZoneInfo]::ConvertTimeFromUtc($nowUtc, $tz)
+
+              return @{
+                  LocalNow = $localNow
+                  LocalDate = $localNow.Date
+              }
+          }
+
+          function Get-TeamIterations {
               param(
                   [string]$Base,
                   [string]$Team
               )
 
               $encodedTeam = [System.Uri]::EscapeDataString($Team)
-              $iterationsUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?`$timeframe=current&api-version=7.1-preview.1"
+              $iterationsUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?api-version=7.1-preview.1"
 
               $response = Invoke-AdoApi `
                   -Method "GET" `
@@ -113,11 +133,18 @@ jobs:
 
               return @(
                   $response.value |
+                      Where-Object {
+                          $_.attributes -and
+                          $_.attributes.startDate -and
+                          $_.attributes.finishDate
+                      } |
                       ForEach-Object {
                           [pscustomobject]@{
-                              Team = $Team
-                              Path = $_.path
-                              Name = $_.name
+                              Team       = $Team
+                              Path       = $_.path
+                              Name       = $_.name
+                              StartDate  = [DateTime]$_.attributes.startDate
+                              FinishDate = [DateTime]$_.attributes.finishDate
                           }
                       }
               )
@@ -125,43 +152,39 @@ jobs:
 
           function Get-NextIterationForTeam {
               param(
-                  [string]$Base,
-                  [string]$Team
+                  [object[]]$TeamIterations,
+                  [DateTime]$LocalDate
               )
 
-              $encodedTeam = [System.Uri]::EscapeDataString($Team)
-              $futureUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?`$timeframe=future&api-version=7.1-preview.1"
-
-              $response = Invoke-AdoApi `
-                  -Method "GET" `
-                  -Url $futureUrl
-
-              if (-not $response.value -or $response.value.Count -eq 0) {
-                  return $null
-              }
-
               $futureIterationsWithDates = @(
-                  $response.value |
+                  $TeamIterations |
                       Where-Object {
-                          $_.attributes -and $_.attributes.startDate
-                      } |
-                      ForEach-Object {
-                          [pscustomobject]@{
-                              Team = $Team
-                              Path = $_.path
-                              Name = $_.name
-                              StartDate = [DateTime]$_.attributes.startDate
-                          }
+                          $_.StartDate.Date -gt $LocalDate.Date
                       }
               )
 
-              if (-not $futureIterationsWithDates -or $futureIterationsWithDates.Count -eq 0) {
+              if ($futureIterationsWithDates.Count -eq 0) {
                   return $null
               }
 
               return $futureIterationsWithDates |
                   Sort-Object StartDate |
                   Select-Object -First 1
+          }
+
+          function Get-CurrentIterationsForTeam {
+              param(
+                  [object[]]$TeamIterations,
+                  [DateTime]$LocalDate
+              )
+
+              return @(
+                  $TeamIterations |
+                      Where-Object {
+                          $_.StartDate.Date -le $LocalDate.Date -and
+                          $_.FinishDate.Date -ge $LocalDate.Date
+                      }
+              )
           }
 
           function Split-IntoChunks {
@@ -212,9 +235,13 @@ jobs:
           }
 
           $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
+          $timeContext = Get-TimeContext -TimezoneId $env:TIMEZONE_ID
+          $localDate = $timeContext.LocalDate
           $configuredTeams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
 
           Write-Host "Target tag: $($env:TARGET_TAG)"
+          Write-Host "Timezone: $($env:TIMEZONE_ID)"
+          Write-Host "Local now: $($timeContext.LocalNow)"
           Write-Host "Configured teams:"
 
           $configuredTeams |
@@ -226,15 +253,24 @@ jobs:
           $nextIterationByTeam = @{}
 
           foreach ($team in $configuredTeams) {
-              Write-Host "Checking current iteration for team: $team"
+              Write-Host "Checking configured iterations for team: $team"
+
+              $teamIterations = Get-TeamIterations `
+                  -Base $base `
+                  -Team $team
+
+              if (-not $teamIterations -or $teamIterations.Count -eq 0) {
+                  Write-Host "No configured iterations with dates found for team: $team"
+                  continue
+              }
 
               $allCurrentIterations += Get-CurrentIterationsForTeam `
-                  -Base $base `
-                  -Team $team
+                  -TeamIterations $teamIterations `
+                  -LocalDate $localDate
 
               $nextIteration = Get-NextIterationForTeam `
-                  -Base $base `
-                  -Team $team
+                  -TeamIterations $teamIterations `
+                  -LocalDate $localDate
 
               if ($null -eq $nextIteration) {
                   Write-Host "No future iteration with start date found for team: $team"
