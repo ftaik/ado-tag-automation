@@ -190,8 +190,11 @@ jobs:
 
               foreach ($patchUrl in $patchUrls) {
                   try {
-                      Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $Headers -ContentType "application/json-patch+json" -Body ($PatchBody | ConvertTo-Json -Depth 20) | Out-Null
-                      return
+                      $response = Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $Headers -ContentType "application/json-patch+json" -Body ($PatchBody | ConvertTo-Json -Depth 20)
+                      return @{
+                          Url = $patchUrl
+                          Response = $response
+                      }
                   }
                   catch {
                       $lastError = $_
@@ -322,13 +325,21 @@ jobs:
 
                           $patchBody = @(
                               @{ op = "test"; path = "/rev"; value = $workItemRev },
-                              @{ op = "add"; path = "/fields/System.Tags"; value = $newTags }
+                              @{ op = "replace"; path = "/fields/System.Tags"; value = $newTags }
                           )
 
                           $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
                           $headers = @{ Authorization = "Basic $basic" }
 
-                          Invoke-WorkItemPatch -WorkItemId $workItemId -PatchBody $patchBody -ProjectBase $projectBase -OrgBase $orgBase -Headers $headers
+                          $patchResult = Invoke-WorkItemPatch -WorkItemId $workItemId -PatchBody $patchBody -ProjectBase $projectBase -OrgBase $orgBase -Headers $headers
+
+                          $responseTags = ""
+
+                          if ($patchResult.Response -and $patchResult.Response.fields -and $patchResult.Response.fields."System.Tags") {
+                              $responseTags = [string]$patchResult.Response.fields."System.Tags"
+                          }
+
+                          Write-Host "Patched item id $workItemId via $($patchResult.Url) | OldTags=$currentTags | NewTags=$newTags | ResponseTags=$responseTags"
 
                           $verifyUrl = ("{0}/_apis/wit/workitems/{1}?fields=System.Tags&api-version=7.1" -f $projectBase, $workItemId)
                           $verifyItem = Invoke-AdoApi -Method "GET" -Url $verifyUrl
