@@ -243,7 +243,7 @@ jobs:
 
               $nextIterationByTeam[$team] = $nextIteration
 
-              Write-Host "Next iteration for $team: Path=$($nextIteration.Path) | StartDate=$($nextIteration.StartDate.ToString('yyyy-MM-dd'))"
+              Write-Host "Next iteration for ${team}: Path=$($nextIteration.Path) | StartDate=$($nextIteration.StartDate.ToString('yyyy-MM-dd'))"
           }
 
           $targetIterations = $allCurrentIterations |
