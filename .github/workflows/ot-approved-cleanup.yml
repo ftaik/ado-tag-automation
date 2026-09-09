@@ -1,0 +1,394 @@
+name: Remove OT-approved before sprint start
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_changes:
+        description: Apply updates (false = dry run)
+        required: true
+        type: boolean
+        default: false
+
+  schedule:
+    - cron: "0 4 * * *"
+
+jobs:
+  cleanup-ot-approved:
+    runs-on: ubuntu-latest
+
+    env:
+      ADO_ORG: ${{ secrets.ADO_ORG }}
+      ADO_PROJECT: ${{ secrets.ADO_PROJECT }}
+      ADO_PAT: ${{ secrets.ADO_PAT }}
+      TARGET_TAG: ${{ secrets.TARGET_TAG }}
+      TIMEZONE_ID: ${{ secrets.TIMEZONE_ID }}
+
+    steps:
+      - name: Validate inputs
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:ADO_ORG)) {
+              throw "Missing secret ADO_ORG"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PROJECT)) {
+              throw "Missing secret ADO_PROJECT"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PAT)) {
+              throw "Missing secret ADO_PAT"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:TARGET_TAG)) {
+              $env:TARGET_TAG = "OT-approved"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:TIMEZONE_ID)) {
+              $env:TIMEZONE_ID = "UTC"
+          }
+
+      - name: Find tomorrow iterations and clean tag
+        shell: pwsh
+        env:
+          APPLY_CHANGES: ${{ inputs.apply_changes }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Get-TimeContext {
+              param(
+                  [string]$TimezoneId
+              )
+
+              $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimezoneId)
+              $nowUtc = [DateTime]::UtcNow
+              $localNow = [System.TimeZoneInfo]::ConvertTimeFromUtc($nowUtc, $tz)
+              $tomorrow = $localNow.Date.AddDays(1)
+
+              return @{
+                  LocalNow     = $localNow
+                  TomorrowDate = $tomorrow
+              }
+          }
+
+          function Invoke-AdoApi {
+              param(
+                  [string]$Method,
+                  [string]$Url,
+                  [object]$Body = $null
+              )
+
+              $basic = [Convert]::ToBase64String(
+                  [Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT")
+              )
+
+              $headers = @{
+                  Authorization = "Basic $basic"
+              }
+
+              if ($null -ne $Body) {
+                  return Invoke-RestMethod `
+                      -Method $Method `
+                      -Uri $Url `
+                      -Headers $headers `
+                      -ContentType "application/json" `
+                      -Body ($Body | ConvertTo-Json -Depth 20)
+              }
+
+              return Invoke-RestMethod `
+                  -Method $Method `
+                  -Uri $Url `
+                  -Headers $headers
+          }
+
+          function Get-IterationNodes {
+              param(
+                  [object]$Node
+              )
+
+              $items = @()
+
+              if ($Node.attributes -and $Node.attributes.startDate -and $Node.path) {
+                  $items += [pscustomobject]@{
+                      Path      = $Node.path
+                      StartDate = [DateTime]$Node.attributes.startDate
+                  }
+              }
+
+              if ($Node.children) {
+                  foreach ($child in $Node.children) {
+                      $items += Get-IterationNodes -Node $child
+                  }
+              }
+
+              return $items
+          }
+
+          function Split-IntoChunks {
+              param(
+                  [int[]]$Ids,
+                  [int]$ChunkSize = 200
+              )
+
+              $chunks = @()
+
+              for ($i = 0; $i -lt $Ids.Count; $i += $ChunkSize) {
+                  $end = [Math]::Min(
+                      $i + $ChunkSize - 1,
+                      $Ids.Count - 1
+                  )
+
+                  $chunks += ,($Ids[$i..$end])
+              }
+
+              return $chunks
+          }
+
+          function Remove-TargetTag {
+              param(
+                  [string]$TagString,
+                  [string]$TargetTag
+              )
+
+              if ([string]::IsNullOrWhiteSpace($TagString)) {
+                  return @{
+                      Changed      = $false
+                      NewTagString = ""
+                  }
+              }
+
+              $sourceTags = $TagString.Split(";") |
+                  ForEach-Object { $_.Trim() } |
+                  Where-Object { $_ -ne "" }
+
+              $resultTags = @()
+              $changed = $false
+
+              foreach ($tag in $sourceTags) {
+                  if (
+                      $tag.Equals(
+                          $TargetTag,
+                          [System.StringComparison]::OrdinalIgnoreCase
+                      )
+                  ) {
+                      $changed = $true
+                  }
+                  else {
+                      $resultTags += $tag
+                  }
+              }
+
+              return @{
+                  Changed      = $changed
+                  NewTagString = ($resultTags -join "; ")
+              }
+          }
+
+          $apply = "$env:APPLY_CHANGES".ToLowerInvariant() -eq "true"
+
+          $timeContext = Get-TimeContext -TimezoneId $env:TIMEZONE_ID
+          $tomorrowDate = $timeContext.TomorrowDate
+
+          Write-Host "Timezone: $($env:TIMEZONE_ID)"
+          Write-Host "Local now: $($timeContext.LocalNow)"
+          Write-Host "Target date (tomorrow): $($tomorrowDate.ToString('yyyy-MM-dd'))"
+          Write-Host "Apply changes: $apply"
+
+          $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
+
+          $iterationsUrl = "$base/_apis/wit/classificationnodes/iterations?`$depth=10&api-version=7.1"
+          $iterationTree = Invoke-AdoApi `
+              -Method "GET" `
+              -Url $iterationsUrl
+
+          $allIterations = Get-IterationNodes -Node $iterationTree
+
+          $targetIterations = $allIterations |
+              Where-Object {
+                  $_.StartDate.Date -eq $tomorrowDate.Date
+              } |
+              Sort-Object Path -Unique
+
+          if (-not $targetIterations -or $targetIterations.Count -eq 0) {
+              Write-Host "No iterations start tomorrow. Nothing to do."
+              exit 0
+          }
+
+          Write-Host "Iterations starting tomorrow:"
+
+          $targetIterations |
+              ForEach-Object {
+                  Write-Host "- $($_.Path)"
+              }
+
+          $totalWorkItemsScanned = 0
+          $totalWorkItemsUpdated = 0
+          $totalFailures = 0
+          $changeLog = @()
+
+          foreach ($iteration in $targetIterations) {
+              $safePath = $iteration.Path.Replace("'", "''")
+
+              $wiqlBody = @{
+                  query = @"
+          SELECT [System.Id]
+          FROM WorkItems
+          WHERE [System.TeamProject] = '$($env:ADO_PROJECT)'
+          AND [System.IterationPath] = '$safePath'
+          "@
+              }
+
+              $wiqlUrl = "$base/_apis/wit/wiql?api-version=7.1"
+
+              $wiqlResult = Invoke-AdoApi `
+                  -Method "POST" `
+                  -Url $wiqlUrl `
+                  -Body $wiqlBody
+
+              if (
+                  -not $wiqlResult.workItems -or
+                  $wiqlResult.workItems.Count -eq 0
+              ) {
+                  Write-Host "No work items in $($iteration.Path)"
+                  continue
+              }
+
+              $ids = @(
+                  $wiqlResult.workItems |
+                      ForEach-Object {
+                          [int]$_.id
+                      }
+              )
+
+              $totalWorkItemsScanned += $ids.Count
+
+              $chunks = Split-IntoChunks `
+                  -Ids $ids `
+                  -ChunkSize 200
+
+              foreach ($chunk in $chunks) {
+                  $batchBody = @{
+                      ids = $chunk
+                      fields = @(
+                          "System.Tags"
+                          "System.IterationPath"
+                      )
+                  }
+
+                  $batchUrl = "$base/_apis/wit/workitemsbatch?api-version=7.1"
+
+                  $batchResult = Invoke-AdoApi `
+                      -Method "POST" `
+                      -Url $batchUrl `
+                      -Body $batchBody
+
+                  foreach ($wi in $batchResult.value) {
+                      try {
+                          $workItemId = [int]$wi.id
+                          $currentTags = ""
+
+                          if ($wi.fields."System.Tags") {
+                              $currentTags = [string]$wi.fields."System.Tags"
+                          }
+
+                          $tagResult = Remove-TargetTag `
+                              -TagString $currentTags `
+                              -TargetTag $env:TARGET_TAG
+
+                          if (-not $tagResult.Changed) {
+                              continue
+                          }
+
+                          $newTags = $tagResult.NewTagString
+
+                          $changeLog += [pscustomobject]@{
+                              WorkItemId    = $workItemId
+                              IterationPath = $iteration.Path
+                              OldTags       = $currentTags
+                              NewTags       = $newTags
+                              Mode = $(
+                                  if ($apply) {
+                                      "apply"
+                                  }
+                                  else {
+                                      "dry-run"
+                                  }
+                              )
+                          }
+
+                          if (-not $apply) {
+                              continue
+                          }
+
+                          $detailUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+
+                          $detail = Invoke-AdoApi `
+                              -Method "GET" `
+                              -Url $detailUrl
+
+                          $patchBody = @(
+                              @{
+                                  op    = "test"
+                                  path  = "/rev"
+                                  value = [int]$detail.rev
+                              },
+                              @{
+                                  op    = "add"
+                                  path  = "/fields/System.Tags"
+                                  value = $newTags
+                              }
+                          )
+
+                          $basic = [Convert]::ToBase64String(
+                              [Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT")
+                          )
+
+                          $headers = @{
+                              Authorization = "Basic $basic"
+                          }
+
+                          $patchUrl = "$base/_apis/wit/workitems/$workItemId?api-version=7.1"
+
+                          Invoke-RestMethod `
+                              -Method PATCH `
+                              -Uri $patchUrl `
+                              -Headers $headers `
+                              -ContentType "application/json-patch+json" `
+                              -Body ($patchBody | ConvertTo-Json -Depth 20) |
+                              Out-Null
+
+                          $totalWorkItemsUpdated++
+                      }
+                      catch {
+                          $totalFailures++
+
+                          Write-Host "Failed work item id $($wi.id): $($_.Exception.Message)"
+                      }
+                  }
+              }
+          }
+
+          Write-Host ""
+          Write-Host "Run summary"
+          Write-Host "Scanned: $totalWorkItemsScanned"
+          Write-Host "Candidates (tag found): $($changeLog.Count)"
+          Write-Host "Updated: $totalWorkItemsUpdated"
+          Write-Host "Failures: $totalFailures"
+
+          if ($changeLog.Count -gt 0) {
+              $json = $changeLog | ConvertTo-Json -Depth 20
+
+              $json |
+                  Out-File `
+                      -FilePath changes.json `
+                      -Encoding utf8
+
+              Write-Host "Saved changes.json"
+          }
+
+      - name: Upload change log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ot-tag-cleanup-log
+          path: changes.json
+          if-no-files-found: ignore
