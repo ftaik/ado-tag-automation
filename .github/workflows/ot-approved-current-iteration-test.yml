@@ -322,10 +322,13 @@ jobs:
                           }
 
                           $workItemRev = [int]$wi.fields."System.Rev"
+                          $runUrl = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+                          $historyNote = "Automation removed tag '$targetTag' via GitHub Actions run: $runUrl"
 
                           $patchBody = @(
                               @{ op = "test"; path = "/rev"; value = $workItemRev },
-                              @{ op = "replace"; path = "/fields/System.Tags"; value = $newTags }
+                              @{ op = "replace"; path = "/fields/System.Tags"; value = $newTags },
+                              @{ op = "add"; path = "/fields/System.History"; value = $historyNote }
                           )
 
                           $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
