@@ -17,11 +17,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ADO_ORG: ${{ secrets.ADO_ORG }}
-      ADO_PROJECT: ${{ secrets.ADO_PROJECT }}
-      ADO_PAT: ${{ secrets.ADO_PAT }}
-      TARGET_TAG: ${{ secrets.TARGET_TAG }}
-      TIMEZONE_ID: ${{ secrets.TIMEZONE_ID }}
+            ADO_ORG: "${{ secrets.ADO_ORG }}"
+            ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
+            ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
+            ADO_PAT: "${{ secrets.ADO_PAT }}"
+            TARGET_TAG: "${{ secrets.TARGET_TAG }}"
+            TIMEZONE_ID: "${{ secrets.TIMEZONE_ID }}"
 
     steps:
       - name: Validate inputs
@@ -33,6 +34,10 @@ jobs:
 
           if ([string]::IsNullOrWhiteSpace($env:ADO_PROJECT)) {
               throw "Missing secret ADO_PROJECT"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_TEAMS)) {
+              throw "Missing secret ADO_TEAMS"
           }
 
           if ([string]::IsNullOrWhiteSpace($env:ADO_PAT)) {
@@ -50,7 +55,7 @@ jobs:
       - name: Find tomorrow iterations and clean tag
         shell: pwsh
         env:
-          APPLY_CHANGES: ${{ inputs.apply_changes }}
+                    APPLY_CHANGES: "${{ inputs.apply_changes }}"
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -100,27 +105,64 @@ jobs:
                   -Headers $headers
           }
 
-          function Get-IterationNodes {
+          function Get-ConfiguredTeams {
               param(
-                  [object]$Node
+                  [string]$RawTeams
               )
 
-              $items = @()
+              $teams = $RawTeams -split "[;,]" |
+                  ForEach-Object {
+                      $_.Trim()
+                  } |
+                  Where-Object {
+                      $_ -ne ""
+                  } |
+                  Sort-Object -Unique
 
-              if ($Node.attributes -and $Node.attributes.startDate -and $Node.path) {
-                  $items += [pscustomobject]@{
-                      Path      = $Node.path
-                      StartDate = [DateTime]$Node.attributes.startDate
+              if (-not $teams -or $teams.Count -eq 0) {
+                  throw "Secret ADO_TEAMS is empty after parsing."
+              }
+
+              return $teams
+          }
+
+          function Get-TeamIterationsStartingTomorrow {
+              param(
+                  [string]$Base,
+                  [string]$Team,
+                  [DateTime]$TomorrowDate
+              )
+
+              $encodedTeam = [System.Uri]::EscapeDataString($Team)
+              $iterationsUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?api-version=7.1-preview.1"
+
+              $response = Invoke-AdoApi `
+                  -Method "GET" `
+                  -Url $iterationsUrl
+
+              if (-not $response.value -or $response.value.Count -eq 0) {
+                  return @()
+              }
+
+              $teamMatches = @()
+
+              foreach ($iteration in $response.value) {
+                  if (-not $iteration.attributes -or -not $iteration.attributes.startDate) {
+                      continue
+                  }
+
+                  $iterationStartDate = [DateTime]$iteration.attributes.startDate
+
+                  if ($iterationStartDate.Date -eq $TomorrowDate.Date) {
+                      $teamMatches += [pscustomobject]@{
+                          Team      = $Team
+                          Path      = $iteration.path
+                          StartDate = $iterationStartDate
+                      }
                   }
               }
 
-              if ($Node.children) {
-                  foreach ($child in $Node.children) {
-                      $items += Get-IterationNodes -Node $child
-                  }
-              }
-
-              return $items
+              return $teamMatches
           }
 
           function Split-IntoChunks {
@@ -195,17 +237,26 @@ jobs:
 
           $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
 
-          $iterationsUrl = "$base/_apis/wit/classificationnodes/iterations?`$depth=10&api-version=7.1"
-          $iterationTree = Invoke-AdoApi `
-              -Method "GET" `
-              -Url $iterationsUrl
+          $configuredTeams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
 
-          $allIterations = Get-IterationNodes -Node $iterationTree
+          Write-Host "Configured teams:"
+          $configuredTeams |
+              ForEach-Object {
+                  Write-Host "- $_"
+              }
 
-          $targetIterations = $allIterations |
-              Where-Object {
-                  $_.StartDate.Date -eq $tomorrowDate.Date
-              } |
+          $teamIterations = @()
+
+          foreach ($team in $configuredTeams) {
+              Write-Host "Checking iterations for team: $team"
+
+              $teamIterations += Get-TeamIterationsStartingTomorrow `
+                  -Base $base `
+                  -Team $team `
+                  -TomorrowDate $tomorrowDate
+          }
+
+          $targetIterations = $teamIterations |
               Sort-Object Path -Unique
 
           if (-not $targetIterations -or $targetIterations.Count -eq 0) {
@@ -217,7 +268,7 @@ jobs:
 
           $targetIterations |
               ForEach-Object {
-                  Write-Host "- $($_.Path)"
+                  Write-Host "- Team=$($_.Team) | Path=$($_.Path)"
               }
 
           $totalWorkItemsScanned = 0
