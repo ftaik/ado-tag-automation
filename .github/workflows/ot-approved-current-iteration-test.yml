@@ -182,8 +182,8 @@ jobs:
               )
 
               $patchUrls = @(
-                  "$ProjectBase/_apis/wit/workitems/$WorkItemId?api-version=7.1",
-                  "$OrgBase/_apis/wit/workitems/$WorkItemId?api-version=7.1"
+                  "$ProjectBase/_apis/wit/workitems/${WorkItemId}?api-version=7.1",
+                  "$OrgBase/_apis/wit/workitems/${WorkItemId}?api-version=7.1"
               )
 
               $lastError = $null
