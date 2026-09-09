@@ -172,6 +172,46 @@ jobs:
               return $chunks
           }
 
+          function Invoke-WorkItemPatch {
+              param(
+                  [int]$WorkItemId,
+                  [object]$PatchBody,
+                  [string]$ProjectBase,
+                  [string]$OrgBase,
+                  [hashtable]$Headers
+              )
+
+              $patchUrls = @(
+                  "$ProjectBase/_apis/wit/workitems/$WorkItemId?api-version=7.1",
+                  "$OrgBase/_apis/wit/workitems/$WorkItemId?api-version=7.1"
+              )
+
+              $lastError = $null
+
+              foreach ($patchUrl in $patchUrls) {
+                  try {
+                      Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $Headers -ContentType "application/json-patch+json" -Body ($PatchBody | ConvertTo-Json -Depth 20) | Out-Null
+                      return
+                  }
+                  catch {
+                      $lastError = $_
+                      $statusCode = "unknown"
+
+                      if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+                          $statusCode = [int]$_.Exception.Response.StatusCode
+                      }
+
+                      Write-Host "Patch attempt failed: URL=$patchUrl | Status=$statusCode | Message=$($_.Exception.Message)"
+
+                      if ($statusCode -ne 404) {
+                          throw
+                      }
+                  }
+              }
+
+              throw $lastError
+          }
+
           $orgBase = $env:ADO_ORG.TrimEnd('/')
           $projectBase = "$orgBase/$($env:ADO_PROJECT)"
           $timeContext = Get-TimeContext -TimezoneId $env:TIMEZONE_ID
@@ -285,9 +325,8 @@ jobs:
 
                           $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT"))
                           $headers = @{ Authorization = "Basic $basic" }
-                          $patchUrl = "$orgBase/_apis/wit/workitems/$workItemId?api-version=7.1"
 
-                          Invoke-RestMethod -Method PATCH -Uri $patchUrl -Headers $headers -ContentType "application/json-patch+json" -Body ($patchBody | ConvertTo-Json -Depth 20) | Out-Null
+                          Invoke-WorkItemPatch -WorkItemId $workItemId -PatchBody $patchBody -ProjectBase $projectBase -OrgBase $orgBase -Headers $headers
                           $totalWorkItemsUpdated++
                       }
                       catch {
