@@ -1,0 +1,311 @@
+name: Test - List OT-approved in current iterations
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-ot-approved-current:
+    runs-on: ubuntu-latest
+
+    env:
+      ADO_ORG: "${{ secrets.ADO_ORG }}"
+      ADO_PROJECT: "${{ secrets.ADO_PROJECT }}"
+      ADO_TEAMS: "${{ secrets.ADO_TEAMS }}"
+      ADO_PAT: "${{ secrets.ADO_PAT }}"
+      TARGET_TAG: "${{ secrets.TARGET_TAG }}"
+
+    steps:
+      - name: Validate inputs
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:ADO_ORG)) {
+              throw "Missing secret ADO_ORG"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PROJECT)) {
+              throw "Missing secret ADO_PROJECT"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_TEAMS)) {
+              throw "Missing secret ADO_TEAMS"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:ADO_PAT)) {
+              throw "Missing secret ADO_PAT"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:TARGET_TAG)) {
+              $env:TARGET_TAG = "OT-approved"
+          }
+
+      - name: List OT-approved from current iterations
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Invoke-AdoApi {
+              param(
+                  [string]$Method,
+                  [string]$Url,
+                  [object]$Body = $null
+              )
+
+              $basic = [Convert]::ToBase64String(
+                  [Text.Encoding]::ASCII.GetBytes(":$env:ADO_PAT")
+              )
+
+              $headers = @{
+                  Authorization = "Basic $basic"
+              }
+
+              if ($null -ne $Body) {
+                  return Invoke-RestMethod `
+                      -Method $Method `
+                      -Uri $Url `
+                      -Headers $headers `
+                      -ContentType "application/json" `
+                      -Body ($Body | ConvertTo-Json -Depth 20)
+              }
+
+              return Invoke-RestMethod `
+                  -Method $Method `
+                  -Uri $Url `
+                  -Headers $headers
+          }
+
+          function Get-ConfiguredTeams {
+              param(
+                  [string]$RawTeams
+              )
+
+              $teams = $RawTeams -split "[;,]" |
+                  ForEach-Object {
+                      $_.Trim()
+                  } |
+                  Where-Object {
+                      $_ -ne ""
+                  } |
+                  Sort-Object -Unique
+
+              if (-not $teams -or $teams.Count -eq 0) {
+                  throw "Secret ADO_TEAMS is empty after parsing."
+              }
+
+              return $teams
+          }
+
+          function Get-CurrentIterationsForTeam {
+              param(
+                  [string]$Base,
+                  [string]$Team
+              )
+
+              $encodedTeam = [System.Uri]::EscapeDataString($Team)
+              $iterationsUrl = "$Base/$encodedTeam/_apis/work/teamsettings/iterations?`$timeframe=current&api-version=7.1-preview.1"
+
+              $response = Invoke-AdoApi `
+                  -Method "GET" `
+                  -Url $iterationsUrl
+
+              if (-not $response.value -or $response.value.Count -eq 0) {
+                  return @()
+              }
+
+              return @(
+                  $response.value |
+                      ForEach-Object {
+                          [pscustomobject]@{
+                              Team = $Team
+                              Path = $_.path
+                              Name = $_.name
+                          }
+                      }
+              )
+          }
+
+          function Split-IntoChunks {
+              param(
+                  [int[]]$Ids,
+                  [int]$ChunkSize = 200
+              )
+
+              $chunks = @()
+
+              for ($i = 0; $i -lt $Ids.Count; $i += $ChunkSize) {
+                  $end = [Math]::Min(
+                      $i + $ChunkSize - 1,
+                      $Ids.Count - 1
+                  )
+
+                  $chunks += ,($Ids[$i..$end])
+              }
+
+              return $chunks
+          }
+
+          function Has-TargetTag {
+              param(
+                  [string]$TagString,
+                  [string]$TargetTag
+              )
+
+              if ([string]::IsNullOrWhiteSpace($TagString)) {
+                  return $false
+              }
+
+              $tags = $TagString.Split(";") |
+                  ForEach-Object {
+                      $_.Trim()
+                  } |
+                  Where-Object {
+                      $_ -ne ""
+                  }
+
+              foreach ($tag in $tags) {
+                  if ($tag.Equals($TargetTag, [System.StringComparison]::OrdinalIgnoreCase)) {
+                      return $true
+                  }
+              }
+
+              return $false
+          }
+
+          $base = "$($env:ADO_ORG.TrimEnd('/'))/$($env:ADO_PROJECT)"
+          $configuredTeams = Get-ConfiguredTeams -RawTeams $env:ADO_TEAMS
+
+          Write-Host "Target tag: $($env:TARGET_TAG)"
+          Write-Host "Configured teams:"
+
+          $configuredTeams |
+              ForEach-Object {
+                  Write-Host "- $_"
+              }
+
+          $allCurrentIterations = @()
+
+          foreach ($team in $configuredTeams) {
+              Write-Host "Checking current iteration for team: $team"
+
+              $allCurrentIterations += Get-CurrentIterationsForTeam `
+                  -Base $base `
+                  -Team $team
+          }
+
+          $targetIterations = $allCurrentIterations |
+              Sort-Object Path -Unique
+
+          if (-not $targetIterations -or $targetIterations.Count -eq 0) {
+              Write-Host "No current iterations found for configured teams."
+              "[]" | Out-File -FilePath ot-approved-current-iteration.json -Encoding utf8
+              exit 0
+          }
+
+          Write-Host "Current iterations:"
+
+          $targetIterations |
+              ForEach-Object {
+                  Write-Host "- Team=$($_.Team) | Path=$($_.Path)"
+              }
+
+          $totalWorkItemsScanned = 0
+          $matches = @()
+
+          foreach ($iteration in $targetIterations) {
+              $safePath = $iteration.Path.Replace("'", "''")
+
+              $wiqlBody = @{
+                  query = @"
+          SELECT [System.Id]
+          FROM WorkItems
+          WHERE [System.TeamProject] = '$($env:ADO_PROJECT)'
+          AND [System.IterationPath] = '$safePath'
+          "@
+              }
+
+              $wiqlUrl = "$base/_apis/wit/wiql?api-version=7.1"
+
+              $wiqlResult = Invoke-AdoApi `
+                  -Method "POST" `
+                  -Url $wiqlUrl `
+                  -Body $wiqlBody
+
+              if (-not $wiqlResult.workItems -or $wiqlResult.workItems.Count -eq 0) {
+                  Write-Host "No work items in $($iteration.Path)"
+                  continue
+              }
+
+              $ids = @(
+                  $wiqlResult.workItems |
+                      ForEach-Object {
+                          [int]$_.id
+                      }
+              )
+
+              $totalWorkItemsScanned += $ids.Count
+              $chunks = Split-IntoChunks -Ids $ids -ChunkSize 200
+
+              foreach ($chunk in $chunks) {
+                  $batchBody = @{
+                      ids = $chunk
+                      fields = @(
+                          "System.Title"
+                          "System.WorkItemType"
+                          "System.State"
+                          "System.Tags"
+                          "System.IterationPath"
+                      )
+                  }
+
+                  $batchUrl = "$base/_apis/wit/workitemsbatch?api-version=7.1"
+
+                  $batchResult = Invoke-AdoApi `
+                      -Method "POST" `
+                      -Url $batchUrl `
+                      -Body $batchBody
+
+                  foreach ($wi in $batchResult.value) {
+                      $currentTags = ""
+
+                      if ($wi.fields."System.Tags") {
+                          $currentTags = [string]$wi.fields."System.Tags"
+                      }
+
+                      if (-not (Has-TargetTag -TagString $currentTags -TargetTag $env:TARGET_TAG)) {
+                          continue
+                      }
+
+                      $match = [pscustomobject]@{
+                          WorkItemId    = [int]$wi.id
+                          Team          = $iteration.Team
+                          IterationPath = [string]$wi.fields."System.IterationPath"
+                          Type          = [string]$wi.fields."System.WorkItemType"
+                          State         = [string]$wi.fields."System.State"
+                          Title         = [string]$wi.fields."System.Title"
+                          Tags          = $currentTags
+                      }
+
+                      $matches += $match
+
+                      Write-Host "OT-approved found: ID=$($match.WorkItemId) | Team=$($match.Team) | Type=$($match.Type) | State=$($match.State) | Title=$($match.Title)"
+                  }
+              }
+          }
+
+          Write-Host ""
+          Write-Host "Run summary"
+          Write-Host "Scanned: $totalWorkItemsScanned"
+          Write-Host "Matches: $($matches.Count)"
+
+          $matches |
+              ConvertTo-Json -Depth 20 |
+              Out-File -FilePath ot-approved-current-iteration.json -Encoding utf8
+
+          Write-Host "Saved ot-approved-current-iteration.json"
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ot-approved-current-iteration
+          path: ot-approved-current-iteration.json
+          if-no-files-found: error
