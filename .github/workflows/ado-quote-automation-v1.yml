@@ -31,12 +31,6 @@ jobs:
       ADO_ORG_URL: ${{ secrets.ADO_ORG_URL }}
       ADO_PROJECT: ${{ secrets.ADO_PROJECT }}
       ADO_PAT: ${{ secrets.ADO_PAT }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
-      SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASS: ${{ secrets.SMTP_PASS }}
-      SMTP_FROM: ${{ secrets.SMTP_FROM }}
       TEST_EMAIL_OVERRIDE: ${{ secrets.TEST_EMAIL_OVERRIDE }}
       WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
       TEST_MODE: ${{ github.event.inputs.test_mode }}

@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const nodemailer = require("nodemailer");
 
 const configPath = path.join(process.cwd(), "config", "ado-quote-automation.config.json");
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
@@ -87,6 +86,36 @@ async function adoRequest({ method, orgUrl, project, pat, endpoint, body, conten
   return response.json();
 }
 
+async function adoOrgRequest({ method, orgUrl, pat, endpoint, body, contentType }) {
+  const trimmedOrg = orgUrl.replace(/\/+$/, "");
+  const url = `${trimmedOrg}${endpoint}`;
+
+  const headers = {
+    Authorization: `Basic ${encodeBasicPat(pat)}`
+  };
+
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+  }
+
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`ADO API ${method} ${url} failed: ${response.status} ${response.statusText} - ${text}`);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+}
+
 async function getWorkItem(orgUrl, project, pat, id, extraFields) {
   const fieldsQuery = Array.from(new Set(extraFields)).join(",");
   return adoRequest({
@@ -105,6 +134,37 @@ async function getUpdates(orgUrl, project, pat, id) {
     project,
     pat,
     endpoint: `/_apis/wit/workitems/${id}/updates?api-version=7.1`
+  });
+}
+
+async function resolveIdentityByEmail(orgUrl, pat, email) {
+  if (isEmpty(email)) return null;
+
+  const filter = encodeURIComponent(String(email).trim());
+  const result = await adoOrgRequest({
+    method: "GET",
+    orgUrl,
+    pat,
+    endpoint: `/_apis/identities?searchFilter=General&filterValue=${filter}&queryMembership=None&api-version=7.1`
+  });
+
+  const identities = Array.isArray(result?.value) ? result.value : [];
+  if (identities.length === 0) {
+    return null;
+  }
+
+  return identities[0];
+}
+
+async function addWorkItemComment(orgUrl, project, pat, id, text) {
+  return adoRequest({
+    method: "POST",
+    orgUrl,
+    project,
+    pat,
+    endpoint: `/_apis/wit/workItems/${id}/comments?api-version=7.1-preview.3`,
+    body: { text },
+    contentType: "application/json"
   });
 }
 
@@ -273,8 +333,7 @@ function buildActions({ workItem, update, configObj, testMode }) {
     notifications.push({
       type: "quote-ready",
       to: configObj.emails.quoteReadyTo,
-      subject: `[ADO #${workItem.id}] Quote status is ${quoteValues.pendingQuote}`,
-      body: `Work item #${workItem.id} (${title}) changed to '${quoteValues.pendingQuote}'.\n\nArea: ${areaPath}`
+      message: `Work item #${workItem.id} (${title}) changed to '${quoteValues.pendingQuote}'.\nArea: ${areaPath}`
     });
   }
 
@@ -288,8 +347,7 @@ function buildActions({ workItem, update, configObj, testMode }) {
       notifications.push({
         type: "released-for-development",
         to: [pmEmail],
-        subject: `[ADO #${workItem.id}] Released for Development enabled`,
-        body: `Work item #${workItem.id} (${title}) was released for development.\n\nArea: ${areaPath}`
+        message: `Work item #${workItem.id} (${title}) was released for development.\nArea: ${areaPath}`
       });
     }
 
@@ -324,43 +382,6 @@ function buildWorkItemUrl(orgUrl, project, id) {
   const trimmed = orgUrl.replace(/\/+$/, "");
   const encodedProject = encodeURIComponent(project);
   return `${trimmed}/${encodedProject}/_workitems/edit/${id}`;
-}
-
-async function sendNotifications(notifications, context) {
-  if (!notifications.length) {
-    return [];
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: requiredEnv("SMTP_HOST"),
-    port: Number(requiredEnv("SMTP_PORT")),
-    secure: parseBoolean(process.env.SMTP_SECURE),
-    auth: {
-      user: requiredEnv("SMTP_USER"),
-      pass: requiredEnv("SMTP_PASS")
-    }
-  });
-
-  const from = requiredEnv("SMTP_FROM");
-  const results = [];
-
-  for (const notification of notifications) {
-    const to = Array.isArray(notification.to) ? notification.to.join(",") : String(notification.to);
-    const info = await transporter.sendMail({
-      from,
-      to,
-      subject: notification.subject,
-      text: `${notification.body}\n\nLink: ${context.workItemUrl}`
-    });
-
-    results.push({
-      type: notification.type,
-      to,
-      messageId: info.messageId
-    });
-  }
-
-  return results;
 }
 
 function resolveDryRun(eventPayload) {
@@ -407,9 +428,40 @@ function applyTestRecipientOverride(notifications, overrideEmail) {
   return notifications.map((notification) => ({
     ...notification,
     to: [overrideEmail],
-    subject: `[TEST MODE] ${notification.subject}`,
-    body: `${notification.body}\n\nOriginal recipients were overridden to ${overrideEmail}.`
+    message: `[TEST MODE]\n${notification.message}\nOriginal recipients were overridden to ${overrideEmail}.`
   }));
+}
+
+async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUrl, notifications }) {
+  if (!notifications.length) {
+    return [];
+  }
+
+  const results = [];
+
+  for (const notification of notifications) {
+    const recipients = Array.isArray(notification.to) ? notification.to : [notification.to];
+    for (const recipient of recipients) {
+      const email = normalizeString(recipient);
+      if (!email) {
+        continue;
+      }
+
+      const identity = await resolveIdentityByEmail(orgUrl, pat, email);
+      const mentionToken = identity?.id ? `@<${String(identity.id).toUpperCase()}>` : `@${email}`;
+      const text = `${mentionToken} ${notification.message}\nLink: ${workItemUrl}`;
+      const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
+
+      results.push({
+        type: notification.type,
+        recipient: email,
+        commentId: comment?.id ?? null,
+        identityResolved: Boolean(identity?.id)
+      });
+    }
+  }
+
+  return results;
 }
 
 async function main() {
@@ -481,7 +533,7 @@ async function main() {
   if (notificationsToSend.length) {
     console.log(
       JSON.stringify(
-        notificationsToSend.map((n) => ({ type: n.type, to: n.to, subject: n.subject })),
+        notificationsToSend.map((n) => ({ type: n.type, to: n.to, message: n.message })),
         null,
         2
       )
@@ -495,12 +547,19 @@ async function main() {
     }
 
     if (notificationsToSend.length) {
-      const sent = await sendNotifications(notificationsToSend, { workItemUrl });
-      console.log("Notifications sent:");
-      console.log(JSON.stringify(sent, null, 2));
+      const comments = await addMentionComments({
+        orgUrl,
+        project,
+        pat,
+        workItemId,
+        workItemUrl,
+        notifications: notificationsToSend
+      });
+      console.log("Mention comments added:");
+      console.log(JSON.stringify(comments, null, 2));
     }
   } else {
-    console.log("Dry run enabled. No patch and no email actions were executed.");
+    console.log("Dry run enabled. No patch and no mention comments were executed.");
   }
 
   console.log(`Done. Work item URL: ${workItemUrl}`);
