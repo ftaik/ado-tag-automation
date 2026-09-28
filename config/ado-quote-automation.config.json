@@ -1,0 +1,46 @@
+{
+  "workItemTypes": [
+    "User Story",
+    "Request"
+  ],
+  "fieldRefs": {
+    "workItemType": "System.WorkItemType",
+    "areaPath": "System.AreaPath",
+    "title": "System.Title",
+    "state": "System.State",
+    "tags": "System.Tags",
+    "billable": "Custom.Billable",
+    "quoteStatus": "Custom.QuoteStatus",
+    "releasedForDevelopment": "Custom.ReleasedforDevelopment",
+    "isEmailSent": "Custom.IsEmailSent",
+    "isPmEmailSent": "Custom.IsPMEmailSent"
+  },
+  "estimateFields": [
+    "Microsoft.VSTS.Scheduling.OriginalEstimate",
+    "Custom.PMEstimate",
+    "Custom.DesignEstimate",
+    "Custom.High-levelEstimate"
+  ],
+  "quoteStatusValues": {
+    "pendingHours": "0 Pending Hours",
+    "pendingQuote": "1 Pending Quote"
+  },
+  "stateValues": {
+    "quoteInProgress": "Quote in Progress",
+    "new": "New"
+  },
+  "emails": {
+    "quoteReadyTo": [
+      "max.peterson@shepherdcmms.com"
+    ],
+    "pmByAreaPath": {
+      "Shepherd CMMS\\CSO Completion": "max@shepherdcmms.com",
+      "Shepherd CMMS\\Modules": "max@shepherdcmms.com",
+      "Shepherd CMMS\\CSO Origination": "harout@shepherdcmms.com",
+      "Shepherd CMMS\\CSO Post Processing": "harout@shepherdcmms.com"
+    }
+  },
+  "test": {
+    "requiredTag": "automation-test"
+  }
+}

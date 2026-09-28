@@ -1,0 +1,16 @@
+{
+  "name": "ado-tag-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event-driven ADO quote automation via GitHub Actions",
+  "main": "scripts/ado-quote-automation.js",
+  "scripts": {
+    "run:quote-automation": "node scripts/ado-quote-automation.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16"
+  }
+}
