@@ -311,7 +311,7 @@ function getRevisionHint(eventPayload) {
   return null;
 }
 
-function pickRelevantUpdate(updates, revisionHint) {
+function pickRelevantUpdate(updates, revisionHint, trackedFields = []) {
   const updateList = Array.isArray(updates?.value) ? updates.value.slice() : [];
   if (updateList.length === 0) {
     return { rev: null, fields: {} };
@@ -320,6 +320,19 @@ function pickRelevantUpdate(updates, revisionHint) {
   if (revisionHint !== null) {
     const exact = updateList.find((u) => Number(u.rev) === Number(revisionHint));
     if (exact) return exact;
+  }
+
+  if (revisionHint === null && trackedFields.length) {
+    const trackedSet = new Set(trackedFields.map((f) => String(f).toLowerCase()));
+    const byNewest = updateList.sort((a, b) => Number(b.rev) - Number(a.rev));
+    const firstRuleRelevant = byNewest.find((u) => {
+      const names = Object.keys(u?.fields || {}).map((name) => name.toLowerCase());
+      return names.some((name) => trackedSet.has(name));
+    });
+
+    if (firstRuleRelevant) {
+      return firstRuleRelevant;
+    }
   }
 
   updateList.sort((a, b) => Number(a.rev) - Number(b.rev));
@@ -631,9 +644,16 @@ async function main() {
     console.log(`Revision hint from event payload: ${revisionHint}`);
   }
 
+  const trackedFields = [
+    config.fieldRefs.billable,
+    config.fieldRefs.quoteStatus,
+    config.fieldRefs.releasedForDevelopment,
+    ...config.estimateFields
+  ];
+
   const workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
   const updates = await getUpdates(orgUrl, project, pat, workItemId);
-  const relevantUpdate = pickRelevantUpdate(updates, revisionHint);
+  const relevantUpdate = pickRelevantUpdate(updates, revisionHint, trackedFields);
 
   console.log(`Using update revision: ${relevantUpdate.rev ?? "unknown"}`);
 
