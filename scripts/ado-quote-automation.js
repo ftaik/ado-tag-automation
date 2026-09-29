@@ -290,29 +290,64 @@ function isWorkItemNotAccessibleError(error) {
   );
 }
 
+function extractWorkItemIdFromText(value) {
+  const text = normalizeString(value);
+  if (!text) return "";
+
+  const patterns = [
+    /[?&]id=(\d+)\b/i,
+    /\/workitems\/(?:edit\/)?(\d+)\b/i,
+    /\b(?:work\s*item|user\s*story|bug|task|request)\s*#(\d+)\b/i,
+    /#(\d{3,})\b/
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return "";
+}
+
+function resolveVerboseLogging(eventPayload) {
+  const cp = eventPayload?.client_payload || {};
+  return parseBoolean(process.env.VERBOSE_LOGS) || parseBoolean(cp.verbose_logs) || parseBoolean(cp.debug);
+}
+
 function getWorkItemId(eventPayload) {
   const fromInput = normalizeString(process.env.WORK_ITEM_ID);
   if (fromInput) return fromInput;
 
   const cp = eventPayload.client_payload || {};
   const resource = cp.resource || {};
+  const detailedMessage = resource.detailedMessage || {};
+  const message = resource.message || {};
 
   const candidates = [
     { source: "client_payload.resource.workItem.id", value: resource.workItem?.id },
     { source: "client_payload.resource.revision.id", value: resource.revision?.id },
-    { source: "client_payload.resource.id", value: resource.id },
     { source: "client_payload.resource.workItemId", value: resource.workItemId },
     { source: "client_payload.resource.fields.System.Id", value: resource.fields?.["System.Id"] },
     { source: "client_payload.workItemId", value: cp.workItemId },
     { source: "client_payload.work_item_id", value: cp.work_item_id },
     { source: "client_payload.resource.resource.id", value: resource.resource?.id },
-    { source: "client_payload.id", value: cp.id }
+    { source: "client_payload.resource.revision.url", value: extractWorkItemIdFromText(resource.revision?.url) },
+    { source: "client_payload.resource.url", value: extractWorkItemIdFromText(resource.url) },
+    { source: "client_payload.resource.detailedMessage.html", value: extractWorkItemIdFromText(detailedMessage.html) },
+    { source: "client_payload.resource.detailedMessage.markdown", value: extractWorkItemIdFromText(detailedMessage.markdown) },
+    { source: "client_payload.resource.detailedMessage.text", value: extractWorkItemIdFromText(detailedMessage.text) },
+    { source: "client_payload.resource.message.html", value: extractWorkItemIdFromText(message.html) },
+    { source: "client_payload.resource.message.markdown", value: extractWorkItemIdFromText(message.markdown) },
+    { source: "client_payload.resource.message.text", value: extractWorkItemIdFromText(message.text) }
   ];
 
   for (const candidate of candidates) {
-    if (!isEmpty(candidate.value)) {
-      console.log(`Resolved work item id from ${candidate.source}: ${candidate.value}`);
-      return String(candidate.value);
+    if (!isEmpty(candidate.value) && /^\d+$/.test(String(candidate.value).trim())) {
+      const resolved = String(candidate.value).trim();
+      console.log(`Resolved work item id from ${candidate.source}: ${resolved}`);
+      return resolved;
     }
   }
 
@@ -663,9 +698,14 @@ async function main() {
   const pat = requiredEnv("ADO_PAT");
 
   const eventPayload = readEventPayload();
+  const verboseLogging = resolveVerboseLogging(eventPayload);
   const discoveredWorkItemId = tryGetWorkItemId(eventPayload);
   console.log(`Event candidate work item id: ${discoveredWorkItemId || "<none>"}`);
-  console.log(`Event payload preview: ${compactJsonForLogs(eventPayload?.client_payload || {})}`);
+  if (verboseLogging) {
+    console.log(`Event payload preview: ${compactJsonForLogs(eventPayload?.client_payload || {})}`);
+  } else {
+    console.log("Event payload preview: <omitted; set VERBOSE_LOGS=true to print full payload>");
+  }
 
   const workItemId = getWorkItemId(eventPayload);
   const revisionHint = getRevisionHint(eventPayload);
