@@ -16,10 +16,8 @@
     "isPmEmailSent": "Custom.IsPMEmailSent"
   },
   "estimateFields": [
-    "Custom.Estimate",
     "Microsoft.VSTS.Scheduling.OriginalEstimate",
-    "Custom.PMEstimate",
-    "Custom.DesignEstimate"
+    "Custom.HighLevelEstimate"
   ],
   "quoteStatusValues": {
     "pendingHours": "0 Pending Hours",
