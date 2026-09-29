@@ -273,7 +273,7 @@ async function addWorkItemComment(orgUrl, project, pat, id, text) {
 
 function tryGetWorkItemId(eventPayload) {
   try {
-    return getWorkItemId(eventPayload);
+    return getWorkItemId(eventPayload, { logResolution: false });
   } catch {
     return null;
   }
@@ -316,7 +316,8 @@ function resolveVerboseLogging(eventPayload) {
   return parseBoolean(process.env.VERBOSE_LOGS) || parseBoolean(cp.verbose_logs) || parseBoolean(cp.debug);
 }
 
-function getWorkItemId(eventPayload) {
+function getWorkItemId(eventPayload, options = {}) {
+  const { logResolution = true } = options;
   const fromInput = normalizeString(process.env.WORK_ITEM_ID);
   if (fromInput) return fromInput;
 
@@ -332,7 +333,6 @@ function getWorkItemId(eventPayload) {
     { source: "client_payload.resource.fields.System.Id", value: resource.fields?.["System.Id"] },
     { source: "client_payload.workItemId", value: cp.workItemId },
     { source: "client_payload.work_item_id", value: cp.work_item_id },
-    { source: "client_payload.resource.resource.id", value: resource.resource?.id },
     { source: "client_payload.resource.revision.url", value: extractWorkItemIdFromText(resource.revision?.url) },
     { source: "client_payload.resource.url", value: extractWorkItemIdFromText(resource.url) },
     { source: "client_payload.resource.detailedMessage.html", value: extractWorkItemIdFromText(detailedMessage.html) },
@@ -346,7 +346,9 @@ function getWorkItemId(eventPayload) {
   for (const candidate of candidates) {
     if (!isEmpty(candidate.value) && /^\d+$/.test(String(candidate.value).trim())) {
       const resolved = String(candidate.value).trim();
-      console.log(`Resolved work item id from ${candidate.source}: ${resolved}`);
+      if (logResolution) {
+        console.log(`Resolved work item id from ${candidate.source}: ${resolved}`);
+      }
       return resolved;
     }
   }
@@ -359,17 +361,22 @@ function getRevisionHint(eventPayload) {
   const resource = cp.resource || {};
 
   const candidates = [
-    cp.rev,
-    cp.revision,
-    resource.rev,
-    resource.revision?.rev,
+    { source: "client_payload.resource.revision.rev", value: resource.revision?.rev },
+    { source: "client_payload.resource.rev", value: resource.rev },
     resource.resourceVersion,
-    resource.revision?.fields?.["System.Rev"]
+    resource.revision?.fields?.["System.Rev"],
+    cp.revision_hint,
+    cp.rev
   ];
 
   for (const candidate of candidates) {
-    if (!isEmpty(candidate) && !Number.isNaN(Number(candidate))) {
-      return Number(candidate);
+    const value = typeof candidate === "object" ? candidate.value : candidate;
+    if (!isEmpty(value) && !Number.isNaN(Number(value))) {
+      const revision = Number(value);
+      if (typeof candidate === "object") {
+        console.log(`Resolved revision hint from ${candidate.source}: ${revision}`);
+      }
+      return revision;
     }
   }
 
