@@ -384,6 +384,23 @@ function hasTag(tagsValue, expectedTag) {
   return tags.includes(normalizeString(expectedTag).toLowerCase());
 }
 
+function resolvePmRecipient(areaPath, pmByAreaPath = {}) {
+  const current = normalizeString(areaPath);
+  if (!current) return null;
+
+  if (pmByAreaPath[current]) {
+    return pmByAreaPath[current];
+  }
+
+  // Fallback to nearest configured parent path when area path is deeper than configured mapping.
+  const currentLower = current.toLowerCase();
+  const candidates = Object.entries(pmByAreaPath)
+    .filter(([path]) => currentLower === normalizeString(path).toLowerCase() || currentLower.startsWith(`${normalizeString(path).toLowerCase()}\\`))
+    .sort((a, b) => b[0].length - a[0].length);
+
+  return candidates.length ? candidates[0][1] : null;
+}
+
 function buildActions({ workItem, update, configObj, testMode }) {
   const refs = configObj.fieldRefs;
   const quoteValues = configObj.quoteStatusValues;
@@ -455,13 +472,16 @@ function buildActions({ workItem, update, configObj, testMode }) {
     !parseBoolean(releasedTransition.oldValue) &&
     parseBoolean(releasedTransition.newValue)
   ) {
-    const pmEmail = configObj.emails.pmByAreaPath[areaPath];
-    if (pmEmail) {
+    const pmEmail = resolvePmRecipient(areaPath, configObj?.emails?.pmByAreaPath || {});
+    if (pmEmail || testMode) {
+      const recipients = pmEmail ? [pmEmail] : ["no-recipient-mapped-in-test-mode@local"];
       notifications.push({
         type: "released-for-development",
-        to: [pmEmail],
+        to: recipients,
         message: `Work item #${workItem.id} (${title}) was released for development.\nArea: ${areaPath}`
       });
+    } else {
+      console.log(`No PM mapping found for area path '${areaPath}'. Skipping released-for-development comment.`);
     }
 
     patchOps.push(patchOp(refs.state, stateValues.new));
