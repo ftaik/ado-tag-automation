@@ -612,8 +612,7 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         : `@${escapeHtml(email)}`;
 
       const messageHtml = escapeHtml(notification.message).replace(/\n/g, "<br>");
-      const workItemLinkHtml = `<a href='${escapeHtml(workItemUrl)}'>${escapeHtml(workItemUrl)}</a>`;
-      const text = `${mentionMarkup}<br>${messageHtml}<br><br>Work item: ${workItemLinkHtml}`;
+      const text = `${mentionMarkup}<br>${messageHtml}<br><br><i>This is an automated message.</i>`;
       const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
 
       results.push({
