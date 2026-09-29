@@ -50,6 +50,15 @@ function normalizeEmail(value) {
   return normalizeString(value).toLowerCase();
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function isYes(value) {
   const v = normalizeString(value).toLowerCase();
   return v === "yes" || v === "true" || v === "1";
@@ -538,10 +547,15 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         continue;
       }
 
+      const normalizedEmail = normalizeEmail(email);
       let identity = null;
       const mappedId =
-        config?.mentions?.identityIdsByEmail?.[normalizeEmail(email)] ||
+        config?.mentions?.identityIdsByEmail?.[normalizedEmail] ||
         config?.mentions?.identityIdsByEmail?.[email];
+      const mappedLabel =
+        config?.mentions?.labelsByEmail?.[normalizedEmail] ||
+        config?.mentions?.labelsByEmail?.[email] ||
+        "";
 
       if (mappedId) {
         identity = { id: mappedId };
@@ -557,8 +571,16 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         );
       }
 
-      const mentionToken = identity?.id ? `@<${String(identity.id).toUpperCase()}>` : `@${email}`;
-      const text = `${mentionToken}\n${notification.message}\n\nWork item: ${workItemUrl}`;
+      const mentionId = identity?.id ? String(identity.id) : "";
+      const mentionLabel =
+        mappedLabel || normalizeString(identity?.displayName) || normalizeString(identity?.uniqueName) || email;
+      const mentionMarkup = mentionId
+        ? `<a href='#' data-vss-mention='version:2.0,${escapeHtml(mentionId)}'>@${escapeHtml(mentionLabel)}</a>`
+        : `@${escapeHtml(email)}`;
+
+      const messageHtml = escapeHtml(notification.message).replace(/\n/g, "<br>");
+      const workItemLinkHtml = `<a href='${escapeHtml(workItemUrl)}'>${escapeHtml(workItemUrl)}</a>`;
+      const text = `${mentionMarkup}<br>${messageHtml}<br><br>Work item: ${workItemLinkHtml}`;
       const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
 
       results.push({

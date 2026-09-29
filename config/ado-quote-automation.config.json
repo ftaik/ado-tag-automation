@@ -49,6 +49,12 @@
       "max@shepherdcmms.com": "5f74422d-89a2-68df-890d-fbb8bdd5d402",
       "max.peterson@shepherdcmms.com": "d621436e-40d3-6b96-b000-2c2e4ef02ae2",
       "harout@shepherdcmms.com": "48493958-6b45-63ee-ad1c-8e90a2a88460"
+    },
+    "labelsByEmail": {
+      "filip@shepherdcmms.com": "Filip Taik",
+      "max@shepherdcmms.com": "Max Ageev",
+      "max.peterson@shepherdcmms.com": "Max Peterson",
+      "harout@shepherdcmms.com": "Harout Mkhjian"
     }
   }
 }
