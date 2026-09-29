@@ -298,19 +298,22 @@ function getWorkItemId(eventPayload) {
   const resource = cp.resource || {};
 
   const candidates = [
-    cp.workItemId,
-    cp.work_item_id,
-    cp.id,
-    resource.id,
-    resource.workItemId,
-    resource.workItem?.id,
-    resource.revision?.id,
-    resource.fields?.["System.Id"],
-    resource.resource?.id
+    { source: "client_payload.resource.workItem.id", value: resource.workItem?.id },
+    { source: "client_payload.resource.revision.id", value: resource.revision?.id },
+    { source: "client_payload.resource.id", value: resource.id },
+    { source: "client_payload.resource.workItemId", value: resource.workItemId },
+    { source: "client_payload.resource.fields.System.Id", value: resource.fields?.["System.Id"] },
+    { source: "client_payload.workItemId", value: cp.workItemId },
+    { source: "client_payload.work_item_id", value: cp.work_item_id },
+    { source: "client_payload.resource.resource.id", value: resource.resource?.id },
+    { source: "client_payload.id", value: cp.id }
   ];
 
   for (const candidate of candidates) {
-    if (!isEmpty(candidate)) return String(candidate);
+    if (!isEmpty(candidate.value)) {
+      console.log(`Resolved work item id from ${candidate.source}: ${candidate.value}`);
+      return String(candidate.value);
+    }
   }
 
   throw new Error("Could not determine work item ID from workflow input or repository_dispatch payload.");
