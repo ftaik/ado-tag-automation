@@ -55,6 +55,16 @@ function encodeBasicPat(pat) {
   return Buffer.from(`:${pat}`).toString("base64");
 }
 
+function extractOrgName(orgUrl) {
+  try {
+    const parsed = new URL(orgUrl);
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    return parts.length ? parts[0] : "";
+  } catch {
+    return "";
+  }
+}
+
 async function adoRequest({ method, orgUrl, project, pat, endpoint, body, contentType }) {
   const trimmedOrg = orgUrl.replace(/\/+$/, "");
   const encodedProject = encodeURIComponent(project);
@@ -192,12 +202,33 @@ async function resolveIdentityByEmail(orgUrl, pat, email) {
   if (isEmpty(email)) return null;
 
   const filter = encodeURIComponent(String(email).trim());
-  const result = await adoOrgRequest({
-    method: "GET",
-    orgUrl,
-    pat,
-    endpoint: `/_apis/identities?searchFilter=General&filterValue=${filter}&queryMembership=None&api-version=7.1`
-  });
+  const endpoint = `/_apis/identities?searchFilter=General&filterValue=${filter}&queryMembership=None&api-version=7.1`;
+
+  // Try current org host first, then vssps host which often serves identities APIs.
+  let result;
+  try {
+    result = await adoOrgRequest({
+      method: "GET",
+      orgUrl,
+      pat,
+      endpoint
+    });
+  } catch (error) {
+    const message = String(error?.message || "").toLowerCase();
+    const orgName = extractOrgName(orgUrl);
+    const canTryVssps = orgName && (message.includes("401") || message.includes("404"));
+    if (!canTryVssps) {
+      throw error;
+    }
+
+    const vsspsOrgUrl = `https://vssps.dev.azure.com/${orgName}`;
+    result = await adoOrgRequest({
+      method: "GET",
+      orgUrl: vsspsOrgUrl,
+      pat,
+      endpoint
+    });
+  }
 
   const identities = Array.isArray(result?.value) ? result.value : [];
   if (identities.length === 0) {
@@ -503,7 +534,15 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         continue;
       }
 
-      const identity = await resolveIdentityByEmail(orgUrl, pat, email);
+      let identity = null;
+      try {
+        identity = await resolveIdentityByEmail(orgUrl, pat, email);
+      } catch (error) {
+        console.log(
+          `Identity lookup failed for ${email}. Falling back to plain @email mention text. ${String(error?.message || error)}`
+        );
+      }
+
       const mentionToken = identity?.id ? `@<${String(identity.id).toUpperCase()}>` : `@${email}`;
       const text = `${mentionToken} ${notification.message}\nLink: ${workItemUrl}`;
       const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
