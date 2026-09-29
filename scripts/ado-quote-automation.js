@@ -711,6 +711,7 @@ async function main() {
     updates = await getUpdates(orgUrl, project, pat, workItemId);
   } catch (error) {
     if (isWorkItemNotAccessibleError(error)) {
+      console.log("EXIT STATUS: SKIPPED_INACCESSIBLE_WORK_ITEM");
       console.log(`Skipping work item ${workItemId}: inaccessible, deleted, or outside permissions.`);
       console.log(String(error?.message || error));
       return;
@@ -729,9 +730,13 @@ async function main() {
   });
 
   if (!actions.shouldRun) {
+    console.log("RUN STATUS: NO_TRIGGER_MATCH");
+    console.log("EXIT STATUS: SKIPPED_NO_TRIGGER");
     console.log(actions.reason);
     return;
   }
+
+  console.log("RUN STATUS: TRIGGER_MATCHED");
 
   const workItemUrl = buildWorkItemUrl(orgUrl, project, workItemId);
 
@@ -777,6 +782,7 @@ async function main() {
     console.log("Dry run enabled. No patch and no mention comments were executed.");
   }
 
+  console.log("EXIT STATUS: EXECUTED");
   console.log(`Done. Work item URL: ${workItemUrl}`);
 }
 
