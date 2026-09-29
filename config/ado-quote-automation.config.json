@@ -17,7 +17,7 @@
   },
   "estimateFields": [
     "Microsoft.VSTS.Scheduling.OriginalEstimate",
-    "Custom.HighLevelEstimate"
+    "Custom.Estimate"
   ],
   "quoteStatusValues": {
     "pendingHours": "0 Pending Hours",
