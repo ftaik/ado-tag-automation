@@ -127,6 +127,57 @@ async function getWorkItem(orgUrl, project, pat, id, extraFields) {
   });
 }
 
+function parseUnknownFieldFromAdoError(error) {
+  const message = String(error?.message || "");
+  const match = message.match(/Cannot find field\s+([^\.]+\.[^\.\"\s]+)\.?/i);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // Fallback for quoted variants in ADO error payload text.
+  const quotedMatch = message.match(/Cannot find field\s+["']([^"']+)["']/i);
+  if (quotedMatch && quotedMatch[1]) {
+    return quotedMatch[1].trim();
+  }
+
+  return null;
+}
+
+async function getWorkItemWithFieldFallback(orgUrl, project, pat, id, extraFields) {
+  let candidateFields = Array.from(new Set(extraFields));
+  const removedFields = [];
+
+  while (candidateFields.length > 0) {
+    try {
+      const workItem = await getWorkItem(orgUrl, project, pat, id, candidateFields);
+      if (removedFields.length) {
+        console.log(`Skipped unknown ADO fields: ${removedFields.join(", ")}`);
+      }
+      return workItem;
+    } catch (error) {
+      const unknownField = parseUnknownFieldFromAdoError(error);
+      if (!unknownField) {
+        throw error;
+      }
+
+      const existsInRequest = candidateFields.some(
+        (f) => f.toLowerCase() === unknownField.toLowerCase()
+      );
+      if (!existsInRequest) {
+        throw error;
+      }
+
+      candidateFields = candidateFields.filter(
+        (f) => f.toLowerCase() !== unknownField.toLowerCase()
+      );
+      removedFields.push(unknownField);
+      console.log(`Field not found in ADO and removed from query: ${unknownField}`);
+    }
+  }
+
+  throw new Error("Unable to fetch work item. All requested fields were removed as unknown.");
+}
+
 async function getUpdates(orgUrl, project, pat, id) {
   return adoRequest({
     method: "GET",
@@ -500,7 +551,7 @@ async function main() {
     console.log(`Revision hint from event payload: ${revisionHint}`);
   }
 
-  const workItem = await getWorkItem(orgUrl, project, pat, workItemId, fieldsToFetch);
+  const workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
   const updates = await getUpdates(orgUrl, project, pat, workItemId);
   const relevantUpdate = pickRelevantUpdate(updates, revisionHint);
 
