@@ -20,6 +20,11 @@ on:
         required: true
         type: boolean
         default: true
+      verbose_logs:
+        description: Print full incoming event payload for debugging
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   process-work-item:
@@ -35,6 +40,7 @@ jobs:
       WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
       TEST_MODE: ${{ github.event.inputs.test_mode }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
+      VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
 
     steps:
       - name: Checkout
