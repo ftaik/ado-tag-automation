@@ -326,13 +326,7 @@ function getWorkItemId(eventPayload, options = {}) {
   const detailedMessage = resource.detailedMessage || {};
   const message = resource.message || {};
 
-  const candidates = [
-    { source: "client_payload.resource.workItem.id", value: resource.workItem?.id },
-    { source: "client_payload.resource.revision.id", value: resource.revision?.id },
-    { source: "client_payload.resource.workItemId", value: resource.workItemId },
-    { source: "client_payload.resource.fields.System.Id", value: resource.fields?.["System.Id"] },
-    { source: "client_payload.workItemId", value: cp.workItemId },
-    { source: "client_payload.work_item_id", value: cp.work_item_id },
+  const highConfidenceCandidates = [
     { source: "client_payload.resource.revision.url", value: extractWorkItemIdFromText(resource.revision?.url) },
     { source: "client_payload.resource.url", value: extractWorkItemIdFromText(resource.url) },
     { source: "client_payload.resource.detailedMessage.html", value: extractWorkItemIdFromText(detailedMessage.html) },
@@ -341,6 +335,16 @@ function getWorkItemId(eventPayload, options = {}) {
     { source: "client_payload.resource.message.html", value: extractWorkItemIdFromText(message.html) },
     { source: "client_payload.resource.message.markdown", value: extractWorkItemIdFromText(message.markdown) },
     { source: "client_payload.resource.message.text", value: extractWorkItemIdFromText(message.text) }
+  ];
+
+  const candidates = [
+    ...highConfidenceCandidates,
+    { source: "client_payload.resource.workItem.id", value: resource.workItem?.id },
+    { source: "client_payload.resource.revision.id", value: resource.revision?.id },
+    { source: "client_payload.resource.workItemId", value: resource.workItemId },
+    { source: "client_payload.resource.fields.System.Id", value: resource.fields?.["System.Id"] },
+    { source: "client_payload.workItemId", value: cp.workItemId },
+    { source: "client_payload.work_item_id", value: cp.work_item_id }
   ];
 
   for (const candidate of candidates) {
@@ -706,6 +710,9 @@ async function main() {
 
   const eventPayload = readEventPayload();
   const verboseLogging = resolveVerboseLogging(eventPayload);
+  const runtimeSha = normalizeString(process.env.GITHUB_SHA);
+  const runtimeShaShort = runtimeSha ? runtimeSha.slice(0, 7) : "local";
+  console.log(`Runtime version (GITHUB_SHA): ${runtimeShaShort}`);
   const discoveredWorkItemId = tryGetWorkItemId(eventPayload);
   console.log(`Event candidate work item id: ${discoveredWorkItemId || "<none>"}`);
   if (verboseLogging) {
@@ -784,6 +791,13 @@ async function main() {
   }
 
   console.log("RUN STATUS: TRIGGER_MATCHED");
+
+  if (!actions.patchOps.length && !actions.notifications.length) {
+    console.log("RUN STATUS: TRIGGER_MATCHED_NO_ACTION");
+    console.log("EXIT STATUS: SKIPPED_NO_ACTION");
+    console.log("Trigger matched, but no field updates or notifications were required.");
+    return;
+  }
 
   const workItemUrl = buildWorkItemUrl(orgUrl, project, workItemId);
 
