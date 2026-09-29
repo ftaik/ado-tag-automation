@@ -361,6 +361,7 @@ function buildActions({ workItem, update, configObj, testMode }) {
 
   const patchOps = [];
   const notifications = [];
+  let willSetPendingQuote = false;
 
   const billableTransition = getTransition(update, refs.billable);
   const quoteStatusTransition = getTransition(update, refs.quoteStatus);
@@ -378,9 +379,13 @@ function buildActions({ workItem, update, configObj, testMode }) {
 
   if (estimateWasEntered(update, configObj.estimateFields) && currentQuoteStatus === quoteValues.pendingHours) {
     patchOps.push(patchOp(refs.quoteStatus, quoteValues.pendingQuote));
+    willSetPendingQuote = true;
   }
 
-  if (quoteStatusTransition.changed && normalizeString(quoteStatusTransition.newValue) === quoteValues.pendingQuote) {
+  const transitionedToPendingQuote =
+    quoteStatusTransition.changed && normalizeString(quoteStatusTransition.newValue) === quoteValues.pendingQuote;
+
+  if (transitionedToPendingQuote || willSetPendingQuote) {
     notifications.push({
       type: "quote-ready",
       to: configObj.emails.quoteReadyTo,
