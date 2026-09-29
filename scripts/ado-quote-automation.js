@@ -46,6 +46,10 @@ function normalizeTagList(tagsValue) {
     .filter((tag) => tag.length > 0);
 }
 
+function normalizeEmail(value) {
+  return normalizeString(value).toLowerCase();
+}
+
 function isYes(value) {
   const v = normalizeString(value).toLowerCase();
   return v === "yes" || v === "true" || v === "1";
@@ -535,8 +539,18 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
       }
 
       let identity = null;
+      const mappedId =
+        config?.mentions?.identityIdsByEmail?.[normalizeEmail(email)] ||
+        config?.mentions?.identityIdsByEmail?.[email];
+
+      if (mappedId) {
+        identity = { id: mappedId };
+      }
+
       try {
-        identity = await resolveIdentityByEmail(orgUrl, pat, email);
+        if (!identity) {
+          identity = await resolveIdentityByEmail(orgUrl, pat, email);
+        }
       } catch (error) {
         console.log(
           `Identity lookup failed for ${email}. Falling back to plain @email mention text. ${String(error?.message || error)}`
@@ -544,7 +558,7 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
       }
 
       const mentionToken = identity?.id ? `@<${String(identity.id).toUpperCase()}>` : `@${email}`;
-      const text = `${mentionToken} ${notification.message}\nLink: ${workItemUrl}`;
+      const text = `${mentionToken}\n${notification.message}\n\nWork item: ${workItemUrl}`;
       const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
 
       results.push({
