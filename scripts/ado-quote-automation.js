@@ -12,6 +12,14 @@ function requiredEnv(name) {
   return String(value).trim();
 }
 
+function compactJsonForLogs(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "<unserializable>";
+  }
+}
+
 function readEventPayload() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
   if (!eventPath || !fs.existsSync(eventPath)) {
@@ -261,6 +269,25 @@ async function addWorkItemComment(orgUrl, project, pat, id, text) {
     body: { text },
     contentType: "application/json"
   });
+}
+
+function tryGetWorkItemId(eventPayload) {
+  try {
+    return getWorkItemId(eventPayload);
+  } catch {
+    return null;
+  }
+}
+
+function isWorkItemNotAccessibleError(error) {
+  const message = String(error?.message || "");
+  return (
+    message.includes("404 Not Found") ||
+    message.includes("401 Unauthorized") ||
+    message.includes("TF401232") ||
+    message.includes("WorkItemUnauthorizedAccessException") ||
+    message.includes("does not exist, or you do not have permissions to read it")
+  );
 }
 
 function getWorkItemId(eventPayload) {
@@ -633,6 +660,10 @@ async function main() {
   const pat = requiredEnv("ADO_PAT");
 
   const eventPayload = readEventPayload();
+  const discoveredWorkItemId = tryGetWorkItemId(eventPayload);
+  console.log(`Event candidate work item id: ${discoveredWorkItemId || "<none>"}`);
+  console.log(`Event payload preview: ${compactJsonForLogs(eventPayload?.client_payload || {})}`);
+
   const workItemId = getWorkItemId(eventPayload);
   const revisionHint = getRevisionHint(eventPayload);
   const dryRun = resolveDryRun(eventPayload);
@@ -670,8 +701,19 @@ async function main() {
     ...config.estimateFields
   ];
 
-  const workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
-  const updates = await getUpdates(orgUrl, project, pat, workItemId);
+  let workItem;
+  let updates;
+  try {
+    workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
+    updates = await getUpdates(orgUrl, project, pat, workItemId);
+  } catch (error) {
+    if (isWorkItemNotAccessibleError(error)) {
+      console.log(`Skipping work item ${workItemId}: inaccessible, deleted, or outside permissions.`);
+      console.log(String(error?.message || error));
+      return;
+    }
+    throw error;
+  }
   const relevantUpdate = pickRelevantUpdate(updates, revisionHint, trackedFields);
 
   console.log(`Using update revision: ${relevantUpdate.rev ?? "unknown"}`);
@@ -736,6 +778,7 @@ async function main() {
 }
 
 main().catch((error) => {
+  console.error("Automation run failed.");
   console.error(error);
   process.exit(1);
 });
