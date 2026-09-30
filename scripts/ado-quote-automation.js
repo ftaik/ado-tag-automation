@@ -219,6 +219,16 @@ async function getUpdates(orgUrl, project, pat, id) {
   });
 }
 
+async function getUpdateByRevision(orgUrl, project, pat, id, revision) {
+  return adoRequest({
+    method: "GET",
+    orgUrl,
+    project,
+    pat,
+    endpoint: `/_apis/wit/workitems/${id}/updates/${revision}?api-version=7.1`
+  });
+}
+
 async function resolveIdentityByEmail(orgUrl, pat, email) {
   if (isEmpty(email)) return null;
 
@@ -316,6 +326,15 @@ function resolveVerboseLogging(eventPayload) {
   return parseBoolean(process.env.VERBOSE_LOGS) || parseBoolean(cp.verbose_logs) || parseBoolean(cp.debug);
 }
 
+function parsePositiveInteger(value) {
+  if (isEmpty(value)) return null;
+  const normalized = String(value).trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
 function getWorkItemId(eventPayload, options = {}) {
   const { logResolution = true } = options;
   const fromInput = normalizeString(process.env.WORK_ITEM_ID);
@@ -367,19 +386,14 @@ function getRevisionHint(eventPayload) {
   const candidates = [
     { source: "client_payload.resource.revision.rev", value: resource.revision?.rev },
     { source: "client_payload.resource.rev", value: resource.rev },
-    resource.resourceVersion,
-    resource.revision?.fields?.["System.Rev"],
-    cp.revision_hint,
-    cp.rev
+    { source: "client_payload.resource.revision.fields.System.Rev", value: resource.revision?.fields?.["System.Rev"] },
+    { source: "client_payload.revision_hint", value: cp.revision_hint }
   ];
 
   for (const candidate of candidates) {
-    const value = typeof candidate === "object" ? candidate.value : candidate;
-    if (!isEmpty(value) && !Number.isNaN(Number(value))) {
-      const revision = Number(value);
-      if (typeof candidate === "object") {
-        console.log(`Resolved revision hint from ${candidate.source}: ${revision}`);
-      }
+    const revision = parsePositiveInteger(candidate.value);
+    if (revision !== null) {
+      console.log(`Resolved revision hint from ${candidate.source}: ${revision}`);
       return revision;
     }
   }
@@ -387,32 +401,41 @@ function getRevisionHint(eventPayload) {
   return null;
 }
 
-function pickRelevantUpdate(updates, revisionHint, trackedFields = []) {
+function pickRelevantUpdate(updates, revisionHint) {
   const updateList = Array.isArray(updates?.value) ? updates.value.slice() : [];
   if (updateList.length === 0) {
-    return { rev: null, fields: {} };
+    return null;
   }
 
   if (revisionHint !== null) {
     const exact = updateList.find((u) => Number(u.rev) === Number(revisionHint));
     if (exact) return exact;
-  }
-
-  if (revisionHint === null && trackedFields.length) {
-    const trackedSet = new Set(trackedFields.map((f) => String(f).toLowerCase()));
-    const byNewest = updateList.sort((a, b) => Number(b.rev) - Number(a.rev));
-    const firstRuleRelevant = byNewest.find((u) => {
-      const names = Object.keys(u?.fields || {}).map((name) => name.toLowerCase());
-      return names.some((name) => trackedSet.has(name));
-    });
-
-    if (firstRuleRelevant) {
-      return firstRuleRelevant;
-    }
+    return null;
   }
 
   updateList.sort((a, b) => Number(a.rev) - Number(b.rev));
   return updateList[updateList.length - 1];
+}
+
+function updateTouchesTrackedFields(update, trackedFields = []) {
+  const changedFields = Object.keys(update?.fields || {}).map((f) => String(f).toLowerCase());
+  const tracked = new Set(trackedFields.map((f) => String(f).toLowerCase()));
+  return changedFields.some((f) => tracked.has(f));
+}
+
+function resolveAutomationActors() {
+  const configured = normalizeString(process.env.AUTOMATION_ACTORS);
+  const defaults = ["dev@shepherd.build", "app@shepherd"];
+  if (!configured) {
+    return new Set(defaults.map((v) => v.toLowerCase()));
+  }
+
+  const values = configured
+    .split(",")
+    .map((v) => normalizeString(v).toLowerCase())
+    .filter((v) => v.length > 0);
+
+  return new Set(values.length ? values : defaults.map((v) => v.toLowerCase()));
 }
 
 function getField(fields, refName) {
@@ -709,6 +732,9 @@ async function main() {
   const pat = requiredEnv("ADO_PAT");
 
   const eventPayload = readEventPayload();
+  const eventName = normalizeString(process.env.GITHUB_EVENT_NAME).toLowerCase();
+  const isManualDispatch = eventName === "workflow_dispatch";
+  const automationActors = resolveAutomationActors();
   const verboseLogging = resolveVerboseLogging(eventPayload);
   const runtimeSha = normalizeString(process.env.GITHUB_SHA);
   const runtimeShaShort = runtimeSha ? runtimeSha.slice(0, 7) : "local";
@@ -759,10 +785,36 @@ async function main() {
   ];
 
   let workItem;
-  let updates;
+  let relevantUpdate;
   try {
     workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
-    updates = await getUpdates(orgUrl, project, pat, workItemId);
+    const currentRevision = parsePositiveInteger(workItem?.rev);
+
+    if (revisionHint !== null) {
+      if (currentRevision !== null && revisionHint > currentRevision) {
+        console.log("RUN STATUS: REVISION_GUARD");
+        console.log("EXIT STATUS: SKIPPED_INVALID_REVISION_HINT");
+        console.log(`Revision hint ${revisionHint} is ahead of current revision ${currentRevision}.`);
+        return;
+      }
+
+      if (currentRevision !== null && revisionHint < currentRevision) {
+        console.log("RUN STATUS: REVISION_GUARD");
+        console.log("EXIT STATUS: SKIPPED_STALE_EVENT");
+        console.log(`Revision hint ${revisionHint} is stale compared to current revision ${currentRevision}.`);
+        return;
+      }
+
+      relevantUpdate = await getUpdateByRevision(orgUrl, project, pat, workItemId, revisionHint);
+    } else if (isManualDispatch) {
+      const updates = await getUpdates(orgUrl, project, pat, workItemId);
+      relevantUpdate = pickRelevantUpdate(updates, null);
+    } else {
+      console.log("RUN STATUS: REVISION_GUARD");
+      console.log("EXIT STATUS: SKIPPED_MISSING_REVISION_HINT");
+      console.log("Missing revision hint for non-manual event. Skipping to avoid replaying historical revisions.");
+      return;
+    }
   } catch (error) {
     if (isWorkItemNotAccessibleError(error)) {
       console.log("EXIT STATUS: SKIPPED_INACCESSIBLE_WORK_ITEM");
@@ -772,7 +824,28 @@ async function main() {
     }
     throw error;
   }
-  const relevantUpdate = pickRelevantUpdate(updates, revisionHint, trackedFields);
+
+  if (!relevantUpdate) {
+    console.log("RUN STATUS: REVISION_GUARD");
+    console.log("EXIT STATUS: SKIPPED_UPDATE_NOT_FOUND");
+    console.log("Unable to resolve relevant update revision for this event.");
+    return;
+  }
+
+  const revisedBy = normalizeEmail(relevantUpdate?.revisedBy?.uniqueName || relevantUpdate?.revisedBy?.name || "");
+  if (revisedBy && automationActors.has(revisedBy)) {
+    console.log("RUN STATUS: SELF_UPDATE_GUARD");
+    console.log("EXIT STATUS: SKIPPED_AUTOMATION_SELF_UPDATE");
+    console.log(`Update revision ${relevantUpdate.rev} was produced by automation actor '${revisedBy}'.`);
+    return;
+  }
+
+  if (!updateTouchesTrackedFields(relevantUpdate, trackedFields)) {
+    console.log("RUN STATUS: NO_RELEVANT_FIELD_CHANGE");
+    console.log("EXIT STATUS: SKIPPED_NO_RELEVANT_FIELD_CHANGE");
+    console.log(`Update revision ${relevantUpdate.rev} did not modify tracked fields.`);
+    return;
+  }
 
   console.log(`Using update revision: ${relevantUpdate.rev ?? "unknown"}`);
 
