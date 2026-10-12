@@ -54,13 +54,19 @@ In Azure DevOps:
 {
   "event_type": "ado-work-item-updated",
   "client_payload": {
-    "id": "$(resource.id)",
-    "rev": "$(resource.rev)",
+    "workItemId": "$(resource.id)",
+    "revision_hint": "$(resource.rev)",
     "resource": $(resource)
   }
 }
 
-Note: if your Service Hook UI does not support embedding object JSON in body, send id and rev only. The script can run from work item id alone.
+Required payload contract for event-driven runs:
+
+1. A work item id (`workItemId` or equivalent in `resource` object)
+2. The exact triggering revision (`revision_hint` or `resource.rev`)
+3. The `resource` object from ADO update event
+
+Note: id-only payloads are no longer considered safe for production because transition rules rely on exact revision deltas.
 
 ## GitHub token for repository dispatch
 The service hook call to GitHub needs a token.
@@ -108,8 +114,10 @@ Optional event-driven test hook:
 - Keep your production hook unchanged.
 
 ## Notes on dedupe behavior
-- The workflow triggers on field transitions from the update event, not on static flags.
-- This avoids the old issue where IsEmailSent=true blocked future valid notifications.
+- The workflow requires a valid revision hint for non-manual events.
+- Stale events are only processed when later revisions did not change tracked fields.
+- Self-generated automation updates are skipped to prevent feedback loops.
+- Mention comments include an automation key marker to suppress duplicate comment spam on retries.
 
 ## Configurable mappings
 Edit config/ado-quote-automation.config.json:

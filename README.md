@@ -23,10 +23,22 @@ Core logic:
 High-level behavior:
 
 1. Triggered by repository dispatch or manual workflow dispatch.
-2. Reads the updated ADO work item and recent updates.
-3. Applies rules for User Story and Request work item types.
-4. Updates fields/state in ADO when rule conditions are met.
-5. Posts ADO comments with proper mentions.
+2. Resolves the triggering work item id and event revision hint.
+3. Loads the exact triggering ADO update revision.
+4. Applies revision and safety guards before rules execute.
+5. Applies rules for User Story and Request work item types.
+6. Updates fields/state in ADO when rule conditions are met.
+7. Posts ADO comments with proper mentions.
+
+Safety guards in current flow:
+
+1. Non-manual events require a valid revision hint.
+2. Invalid (future) revisions are skipped.
+3. Stale revisions are processed only if newer revisions do not touch tracked fields.
+4. Updates authored by automation actors are skipped.
+5. Updates with no tracked field changes are skipped.
+6. Patch operations are filtered for no-op writes.
+7. Mention comments include idempotency keys to avoid duplicate spam.
 
 Current rule summary:
 
@@ -67,6 +79,12 @@ Function app settings used by relay:
 2. GH_REPO
 3. GH_TOKEN
 4. GH_EVENT_TYPE
+
+Relay payload requirements:
+
+1. Include work item id.
+2. Include exact revision for the triggering update.
+3. Include `resource` from ADO work item updated event so revision fields and updated-by identity are available.
 
 ## OT-approved tag workflows
 

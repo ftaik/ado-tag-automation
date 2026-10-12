@@ -29,6 +29,9 @@ on:
 jobs:
   process-work-item:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ado-quote-${{ github.event.client_payload.resource.workItem.id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.revision.id || github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.inputs.work_item_id || github.run_id }}
+      cancel-in-progress: false
     permissions:
       contents: read
 
@@ -41,6 +44,8 @@ jobs:
       TEST_MODE: ${{ github.event.inputs.test_mode }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
+      AUTOMATION_ACTORS: dev@shepherd.build,app@shepherd
+      MAX_STALE_REV_SCAN: "40"
 
     steps:
       - name: Checkout
