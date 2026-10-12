@@ -1,4 +1,8 @@
 name: ADO quote automation v1 (event-driven)
+run-name: >-
+  TEST WI ${{ github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.workItem.id || github.event.inputs.work_item_id || 'unknown' }}
+  rev ${{ github.event.client_payload.revision_hint || github.event.client_payload.resource.rev || github.event.client_payload.resource.revision.rev || 'na' }}
+  notif ${{ github.event.client_payload.notificationId || 'manual' }}
 
 on:
   repository_dispatch:
@@ -31,6 +35,9 @@ jobs:
       ADO_PAT: ${{ secrets.ADO_PAT }}
       TEST_EMAIL_OVERRIDE: ${{ secrets.TEST_EMAIL_OVERRIDE }}
       WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
+      EVENT_WORK_ITEM_ID: ${{ github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.workItem.id || github.event.inputs.work_item_id || '' }}
+      EVENT_REVISION_HINT: ${{ github.event.client_payload.revision_hint || github.event.client_payload.resource.rev || github.event.client_payload.resource.revision.rev || '' }}
+      EVENT_NOTIFICATION_ID: ${{ github.event.client_payload.notificationId || '' }}
       TEST_MODE: "true"
       DRY_RUN: "false"
       VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
@@ -40,6 +47,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Trace event routing
+        run: |
+          echo "RUN TRACE: event_name=${{ github.event_name }}"
+          echo "RUN TRACE: event_action=${{ github.event.action || 'n/a' }}"
+          echo "RUN TRACE: work_item_id=${EVENT_WORK_ITEM_ID:-n/a}"
+          echo "RUN TRACE: revision_hint=${EVENT_REVISION_HINT:-n/a}"
+          echo "RUN TRACE: notification_id=${EVENT_NOTIFICATION_ID:-n/a}"
+          echo "RUN TRACE: actor=${{ github.actor }}"
 
       - name: Set up Node
         uses: actions/setup-node@v4
