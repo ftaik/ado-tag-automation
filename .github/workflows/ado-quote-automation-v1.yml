@@ -41,8 +41,8 @@ jobs:
       ADO_PAT: ${{ secrets.ADO_PAT }}
       TEST_EMAIL_OVERRIDE: ${{ secrets.TEST_EMAIL_OVERRIDE }}
       WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
-      TEST_MODE: ${{ github.event.inputs.test_mode }}
-      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      TEST_MODE: "true"
+      DRY_RUN: "true"
       VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
       AUTOMATION_ACTORS: dev@shepherd.build,app@shepherd
       MAX_STALE_REV_SCAN: "40"
