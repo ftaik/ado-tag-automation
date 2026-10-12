@@ -505,6 +505,52 @@ function parseNullableBoolean(value) {
   return null;
 }
 
+function stringifyFieldValueForLogs(value, maxLength = 220) {
+  if (value === null || value === undefined) return "<empty>";
+
+  let raw;
+  if (typeof value === "string") {
+    raw = value;
+  } else {
+    try {
+      raw = JSON.stringify(value);
+    } catch {
+      raw = String(value);
+    }
+  }
+
+  const compact = String(raw).replace(/\s+/g, " ").trim();
+  if (compact.length <= maxLength) {
+    return compact;
+  }
+
+  return `${compact.slice(0, maxLength)}...`;
+}
+
+function logRevisionChangeDetails(update) {
+  const changedEntries = Object.entries(update?.fields || {});
+  const changedFieldNames = changedEntries.map(([name]) => name);
+  const revisedBy = normalizeString(update?.revisedBy?.uniqueName || update?.revisedBy?.name || "<unknown>");
+  const revisedDate = normalizeString(update?.revisedDate || "<unknown>");
+
+  console.log(`Revision metadata: rev=${update?.rev ?? "unknown"}, revisedBy=${revisedBy}, revisedDate=${revisedDate}`);
+  console.log(`Revision changed field count: ${changedFieldNames.length}`);
+  console.log(`Revision changed fields: ${changedFieldNames.length ? changedFieldNames.join(", ") : "<none>"}`);
+
+  if (!changedEntries.length) {
+    return;
+  }
+
+  const details = changedEntries.map(([fieldName, delta]) => ({
+    field: fieldName,
+    oldValue: stringifyFieldValueForLogs(delta?.oldValue),
+    newValue: stringifyFieldValueForLogs(delta?.newValue)
+  }));
+
+  console.log("Revision field transitions:");
+  console.log(JSON.stringify(details, null, 2));
+}
+
 function areFieldValuesEquivalent(currentValue, nextValue) {
   const currentBool = parseNullableBoolean(currentValue);
   const nextBool = parseNullableBoolean(nextValue);
@@ -1031,10 +1077,12 @@ async function main() {
     console.log("RUN STATUS: NO_RELEVANT_FIELD_CHANGE");
     console.log("EXIT STATUS: SKIPPED_NO_RELEVANT_FIELD_CHANGE");
     console.log(`Update revision ${relevantUpdate.rev} did not modify tracked fields.`);
+    logRevisionChangeDetails(relevantUpdate);
     return;
   }
 
   console.log(`Using update revision: ${relevantUpdate.rev ?? "unknown"}`);
+  logRevisionChangeDetails(relevantUpdate);
 
   const actions = buildActions({
     workItem,
