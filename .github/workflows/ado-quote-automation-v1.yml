@@ -10,16 +10,6 @@ on:
         description: Work item ID for manual test runs
         required: true
         type: string
-      test_mode:
-        description: Force test mode (only tagged test tickets, emails overridden)
-        required: true
-        type: boolean
-        default: true
-      dry_run:
-        description: Dry run mode (no patching, no emails)
-        required: true
-        type: boolean
-        default: true
       verbose_logs:
         description: Print full incoming event payload for debugging
         required: true
@@ -42,7 +32,7 @@ jobs:
       TEST_EMAIL_OVERRIDE: ${{ secrets.TEST_EMAIL_OVERRIDE }}
       WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
       TEST_MODE: "true"
-      DRY_RUN: "true"
+      DRY_RUN: "false"
       VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
       AUTOMATION_ACTORS: dev@shepherd.build,app@shepherd
       MAX_STALE_REV_SCAN: "40"
