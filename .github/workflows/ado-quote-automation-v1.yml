@@ -1,6 +1,6 @@
 name: ADO quote automation v1 (event-driven)
 run-name: >-
-  TEST WI ${{ github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.workItem.id || github.event.inputs.work_item_id || 'unknown' }}
+  PROD WI ${{ github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.workItem.id || github.event.inputs.work_item_id || 'unknown' }}
   rev ${{ github.event.client_payload.revision_hint || github.event.client_payload.resource.rev || github.event.client_payload.resource.revision.rev || 'na' }}
   notif ${{ github.event.client_payload.notificationId || 'manual' }}
 
@@ -38,7 +38,7 @@ jobs:
       EVENT_WORK_ITEM_ID: ${{ github.event.client_payload.workItemId || github.event.client_payload.work_item_id || github.event.client_payload.resource.workItemId || github.event.client_payload.resource.workItem.id || github.event.inputs.work_item_id || '' }}
       EVENT_REVISION_HINT: ${{ github.event.client_payload.revision_hint || github.event.client_payload.resource.rev || github.event.client_payload.resource.revision.rev || '' }}
       EVENT_NOTIFICATION_ID: ${{ github.event.client_payload.notificationId || '' }}
-      TEST_MODE: "true"
+      TEST_MODE: "false"
       DRY_RUN: "false"
       VERBOSE_LOGS: ${{ github.event.inputs.verbose_logs }}
       AUTOMATION_ACTORS: dev@shepherd.build,app@shepherd
