@@ -43,30 +43,28 @@ In Azure DevOps:
    - Team project = Shepherd CMMS
    - Work item type IN User Story, Request
 5. URL:
-   - POST https://api.github.com/repos/<owner>/<repo>/dispatches
+  - POST https://<your-function-app>.azurewebsites.net/api/ado-dispatch-relay?code=<function-key>
 6. HTTP headers:
-   - Authorization: Bearer <GITHUB_TOKEN_WITH_REPO_DISPATCH_ACCESS>
-   - Accept: application/vnd.github+json
-   - X-GitHub-Api-Version: 2022-11-28
    - Content-Type: application/json
-7. Body (JSON):
+7. Body:
+  - Leave the default Azure DevOps work item update payload.
+  - The relay transforms this into GitHub `repository_dispatch` payload.
 
-{
-  "event_type": "ado-work-item-updated",
-  "client_payload": {
-    "workItemId": "$(resource.id)",
-    "revision_hint": "$(resource.rev)",
-    "resource": $(resource)
-  }
-}
+Required relay -> repository_dispatch contract (locked):
 
-Required payload contract for event-driven runs:
+1. `client_payload.workItemId` (and mirrored `work_item_id`)
+2. `client_payload.revision_hint` (exact triggering revision)
+3. `client_payload.revisedBy` identity object
+4. `client_payload.changedFieldNames` list
+5. `client_payload.eventId` (from service hook event id)
+6. `client_payload.notificationId`
+7. `client_payload.subscriptionId`
+8. `client_payload.resource` (ADO update resource payload)
 
-1. A work item id (`workItemId` or equivalent in `resource` object)
-2. The exact triggering revision (`revision_hint` or `resource.rev`)
-3. The `resource` object from ADO update event
+Strict rule:
 
-Note: id-only payloads are no longer considered safe for production because transition rules rely on exact revision deltas.
+1. Non-manual workflow runs reject payloads missing `revision_hint`.
+2. There is no id-only fallback mode for event-driven execution.
 
 ## GitHub token for repository dispatch
 The service hook call to GitHub needs a token.
@@ -114,10 +112,11 @@ Optional event-driven test hook:
 - Keep your production hook unchanged.
 
 ## Notes on dedupe behavior
-- The workflow requires a valid revision hint for non-manual events.
+- The workflow requires a valid `revision_hint` for non-manual events and skips when missing.
 - Stale events are only processed when later revisions did not change tracked fields.
 - Self-generated automation updates are skipped to prevent feedback loops.
 - Mention comments include an automation key marker to suppress duplicate comment spam on retries.
+- Rule execution writes an operation key marker (`workItemId:revision:ruleName`) to prevent duplicate retries from reapplying the same action.
 
 ## Configurable mappings
 Edit config/ado-quote-automation.config.json:

@@ -5,7 +5,8 @@
   "description": "Event-driven ADO quote automation via GitHub Actions",
   "main": "scripts/ado-quote-automation.js",
   "scripts": {
-    "run:quote-automation": "node scripts/ado-quote-automation.js"
+    "run:quote-automation": "node scripts/ado-quote-automation.js",
+    "test:replay": "node scripts/replay-harness.js"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,1141 @@
+{
+  "count": 18,
+  "value": [
+    {
+      "fields": {
+        "Microsoft.VSTS.Common.StackRank": {
+          "newValue": 1997687664.0,
+          "oldValue": 1972656235.0
+        },
+        "System.AuthorizedAs": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz"
+              }
+            },
+            "descriptor": "aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "displayName": "Steven So",
+            "id": "d3060d95-0d4f-6c77-b641-e33494cee293",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "uniqueName": "steven@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/d3060d95-0d4f-6c77-b641-e33494cee293"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T03:23:36.873Z",
+          "oldValue": "2026-09-30T03:21:44.427Z"
+        },
+        "System.ChangedBy": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz"
+              }
+            },
+            "descriptor": "aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "displayName": "Steven So",
+            "id": "d3060d95-0d4f-6c77-b641-e33494cee293",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "uniqueName": "steven@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/d3060d95-0d4f-6c77-b641-e33494cee293"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T03:23:36.873Z",
+          "oldValue": "2026-09-30T03:21:44.427Z"
+        },
+        "System.PersonId": {
+          "newValue": 194111039,
+          "oldValue": 151298080
+        },
+        "System.Rev": {
+          "newValue": 452,
+          "oldValue": 451
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T03:27:18.397Z",
+          "oldValue": "2026-09-30T03:23:36.873Z"
+        },
+        "System.Watermark": {
+          "newValue": 747906,
+          "oldValue": 747903
+        }
+      },
+      "id": 461,
+      "rev": 452,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz"
+          }
+        },
+        "descriptor": "aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+        "displayName": "Steven So",
+        "id": "d3060d95-0d4f-6c77-b641-e33494cee293",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+        "name": "Steven So <steven@shepherdcmms.com>",
+        "uniqueName": "steven@shepherdcmms.com",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/d3060d95-0d4f-6c77-b641-e33494cee293"
+      },
+      "revisedDate": "2026-09-30T03:27:18.397Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/461",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedAs": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz"
+              }
+            },
+            "descriptor": "aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "displayName": "Steven So",
+            "id": "d3060d95-0d4f-6c77-b641-e33494cee293",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "uniqueName": "steven@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/d3060d95-0d4f-6c77-b641-e33494cee293"
+          }
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T03:27:18.397Z",
+          "oldValue": "2026-09-30T03:23:36.873Z"
+        },
+        "System.ChangedBy": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz"
+              }
+            },
+            "descriptor": "aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "displayName": "Steven So",
+            "id": "d3060d95-0d4f-6c77-b641-e33494cee293",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZDMwNjBkOTUtMGQ0Zi03Yzc3LWI2NDEtZTMzNDk0Y2VlMjkz",
+            "uniqueName": "steven@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/d3060d95-0d4f-6c77-b641-e33494cee293"
+          }
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T03:27:18.397Z",
+          "oldValue": "2026-09-30T03:23:36.873Z"
+        },
+        "System.CommentCount": {
+          "newValue": 116,
+          "oldValue": 115
+        },
+        "System.PersonId": {
+          "newValue": 151298080,
+          "oldValue": 194111039
+        },
+        "System.Rev": {
+          "newValue": 453,
+          "oldValue": 452
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T03:29:02.133Z",
+          "oldValue": "2026-09-30T03:27:18.397Z"
+        },
+        "System.Watermark": {
+          "newValue": 747907,
+          "oldValue": 747906
+        }
+      },
+      "id": 462,
+      "rev": 453,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+          }
+        },
+        "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "displayName": "Scott Boyd",
+        "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "name": "Scott Boyd <scott@shepherd.build>",
+        "uniqueName": "scott@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+      },
+      "revisedDate": "2026-09-30T03:29:02.133Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/462",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T03:29:02.133Z",
+          "oldValue": "2026-09-30T03:27:18.397Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T03:29:02.133Z",
+          "oldValue": "2026-09-30T03:27:18.397Z"
+        },
+        "System.Rev": {
+          "newValue": 454,
+          "oldValue": 453
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T03:29:10.777Z",
+          "oldValue": "2026-09-30T03:29:02.133Z"
+        },
+        "System.Watermark": {
+          "newValue": 747910,
+          "oldValue": 747907
+        }
+      },
+      "id": 463,
+      "rev": 454,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+          }
+        },
+        "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "displayName": "Scott Boyd",
+        "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "name": "Scott Boyd <scott@shepherd.build>",
+        "uniqueName": "scott@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+      },
+      "revisedDate": "2026-09-30T03:29:10.777Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/463",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T03:29:10.777Z",
+          "oldValue": "2026-09-30T03:29:02.133Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T03:29:10.777Z",
+          "oldValue": "2026-09-30T03:29:02.133Z"
+        },
+        "System.History": {
+          "newValue": "@<94CB3AE3-B816-65D6-A172-72FCF8E545BB> @<2A0E0647-0001-65B1-A693-9BCBDD3ABF26> not sure if one of you but the OT approved tag removal automation went a bit haywire on this ticket (poor Max's inbox will be overwhelmed!) sorry if not you, maybe you know who set this up? It looks like a power automate flow, but not one in dev\n\nI've revoked the app@shepherdcmms.com Azure PAT token to stop the spiral: ![image.png](https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/attachments/e45aa35a-bf9e-4b20-9b7f-6cb1ba6892ee?fileName=image.png)"
+        },
+        "System.Rev": {
+          "newValue": 455,
+          "oldValue": 454
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:17:42.65Z",
+          "oldValue": "2026-09-30T03:29:10.777Z"
+        },
+        "System.Watermark": {
+          "newValue": 747911,
+          "oldValue": 747910
+        }
+      },
+      "id": 464,
+      "rev": 455,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+          }
+        },
+        "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "displayName": "Scott Boyd",
+        "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "name": "Scott Boyd <scott@shepherd.build>",
+        "uniqueName": "scott@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+      },
+      "revisedDate": "2026-09-30T05:17:42.65Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/464",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedAs": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+              }
+            },
+            "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "displayName": "Filip Taik",
+            "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "uniqueName": "filip@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:17:42.65Z",
+          "oldValue": "2026-09-30T03:29:10.777Z"
+        },
+        "System.ChangedBy": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+              }
+            },
+            "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "displayName": "Filip Taik",
+            "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "uniqueName": "filip@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:17:42.65Z",
+          "oldValue": "2026-09-30T03:29:10.777Z"
+        },
+        "System.CommentCount": {
+          "newValue": 117,
+          "oldValue": 116
+        },
+        "System.History": {
+          "newValue": "<div><a href=\"#\" data-vss-mention=\"version:2.0,1a9102ce-8d1a-617f-8e63-6c7d91134bf6\">@Scott Boyd</a>&nbsp;<a href=\"#\" data-vss-mention=\"version:2.0,94cb3ae3-b816-65d6-a172-72fcf8e545bb\">@Mari Stepanjan</a>&nbsp;yeah my bad. It tried a new method for this ticket <a href=\"https://dev.azure.com/shepherdcmms/Shepherd%20CMMS/_workitems/edit/30458/\" data-vss-mention=\"version:1.0\">#30458</a>. I disabled the service hook for now </div>",
+          "oldValue": "@<94CB3AE3-B816-65D6-A172-72FCF8E545BB> @<2A0E0647-0001-65B1-A693-9BCBDD3ABF26> not sure if one of you but the OT approved tag removal automation went a bit haywire on this ticket (poor Max's inbox will be overwhelmed!) sorry if not you, maybe you know who set this up? It looks like a power automate flow, but not one in dev\n\nI've revoked the app@shepherdcmms.com Azure PAT token to stop the spiral: ![image.png](https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/attachments/e45aa35a-bf9e-4b20-9b7f-6cb1ba6892ee?fileName=image.png)"
+        },
+        "System.PersonId": {
+          "newValue": 192708630,
+          "oldValue": 151298080
+        },
+        "System.Rev": {
+          "newValue": 456,
+          "oldValue": 455
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:19:16.693Z",
+          "oldValue": "2026-09-30T05:17:42.65Z"
+        },
+        "System.Watermark": {
+          "newValue": 747930,
+          "oldValue": 747911
+        }
+      },
+      "id": 465,
+      "rev": 456,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+          }
+        },
+        "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+        "displayName": "Filip Taik",
+        "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+        "name": "Filip Taik <filip@shepherdcmms.com>",
+        "uniqueName": "filip@shepherdcmms.com",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+      },
+      "revisedDate": "2026-09-30T05:19:16.693Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/465",
+      "workItemId": 33828
+    },
+    {
+      "id": 466,
+      "relations": {
+        "added": [
+          {
+            "attributes": {
+              "comment": "Filip Taik mentioned work item #30458 in #33828",
+              "isLocked": false,
+              "name": "Related"
+            },
+            "rel": "System.LinkTypes.Related",
+            "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/30458"
+          }
+        ]
+      },
+      "rev": 456,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+          }
+        },
+        "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+        "displayName": "Filip Taik",
+        "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+        "name": "Filip Taik <filip@shepherdcmms.com>",
+        "uniqueName": "filip@shepherdcmms.com",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+      },
+      "revisedDate": "2026-09-30T05:17:43.267Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/466",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedAs": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+              }
+            },
+            "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "displayName": "Filip Taik",
+            "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "uniqueName": "filip@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+          }
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:19:16.693Z",
+          "oldValue": "2026-09-30T05:17:42.65Z"
+        },
+        "System.ChangedBy": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2"
+              }
+            },
+            "descriptor": "aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "displayName": "Filip Taik",
+            "id": "2a0e0647-0001-65b1-a693-9bcbdd3abf26",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MmEwZTA2NDctMDAwMS03NWIxLWE2OTMtOWJjYmRkM2FiZjI2",
+            "uniqueName": "filip@shepherdcmms.com",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/2a0e0647-0001-65b1-a693-9bcbdd3abf26"
+          }
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:19:16.693Z",
+          "oldValue": "2026-09-30T05:17:42.65Z"
+        },
+        "System.CommentCount": {
+          "newValue": 118,
+          "oldValue": 117
+        },
+        "System.History": {
+          "newValue": "@<48493958-6B45-63EE-AD1C-8E90A2A88460> FYI see below, I think you might be a victim of this too...",
+          "oldValue": "<div><a href=\"#\" data-vss-mention=\"version:2.0,1a9102ce-8d1a-617f-8e63-6c7d91134bf6\">@Scott Boyd</a>&nbsp;<a href=\"#\" data-vss-mention=\"version:2.0,94cb3ae3-b816-65d6-a172-72fcf8e545bb\">@Mari Stepanjan</a>&nbsp;yeah my bad. It tried a new method for this ticket <a href=\"https://dev.azure.com/shepherdcmms/Shepherd%20CMMS/_workitems/edit/30458/\" data-vss-mention=\"version:1.0\">#30458</a>. I disabled the service hook for now </div>"
+        },
+        "System.PersonId": {
+          "newValue": 151298080,
+          "oldValue": 192708630
+        },
+        "System.Rev": {
+          "newValue": 457,
+          "oldValue": 456
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:22:36.897Z",
+          "oldValue": "2026-09-30T05:19:16.693Z"
+        },
+        "System.Watermark": {
+          "newValue": 747931,
+          "oldValue": 747930
+        }
+      },
+      "id": 467,
+      "rev": 457,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+          }
+        },
+        "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "displayName": "Scott Boyd",
+        "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+        "name": "Scott Boyd <scott@shepherd.build>",
+        "uniqueName": "scott@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+      },
+      "revisedDate": "2026-09-30T05:22:36.897Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/467",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedAs": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+              }
+            },
+            "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+            "displayName": "App",
+            "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+            "uniqueName": "dev@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:22:36.897Z",
+          "oldValue": "2026-09-30T05:19:16.693Z"
+        },
+        "System.ChangedBy": {
+          "newValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+              }
+            },
+            "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+            "displayName": "App",
+            "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+            "uniqueName": "dev@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+          },
+          "oldValue": {
+            "_links": {
+              "avatar": {
+                "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2"
+              }
+            },
+            "descriptor": "aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "displayName": "Scott Boyd",
+            "id": "1a9102ce-8d1a-617f-8e63-6c7d91134bf6",
+            "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.MWE5MTAyY2UtOGQxYS03MTdmLThlNjMtNmM3ZDkxMTM0YmY2",
+            "uniqueName": "scott@shepherd.build",
+            "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/1a9102ce-8d1a-617f-8e63-6c7d91134bf6"
+          }
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:22:36.897Z",
+          "oldValue": "2026-09-30T05:19:16.693Z"
+        },
+        "System.CommentCount": {
+          "newValue": 117,
+          "oldValue": 118
+        },
+        "System.PersonId": {
+          "newValue": 146315673,
+          "oldValue": 151298080
+        },
+        "System.Rev": {
+          "newValue": 458,
+          "oldValue": 457
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:22:39.617Z",
+          "oldValue": "2026-09-30T05:22:36.897Z"
+        },
+        "System.Watermark": {
+          "newValue": 747932,
+          "oldValue": 747931
+        }
+      },
+      "id": 468,
+      "rev": 458,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:22:39.617Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/468",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:22:39.617Z",
+          "oldValue": "2026-09-30T05:22:36.897Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:22:39.617Z",
+          "oldValue": "2026-09-30T05:22:36.897Z"
+        },
+        "System.CommentCount": {
+          "newValue": 116,
+          "oldValue": 117
+        },
+        "System.Rev": {
+          "newValue": 459,
+          "oldValue": 458
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:22:42.797Z",
+          "oldValue": "2026-09-30T05:22:39.617Z"
+        },
+        "System.Watermark": {
+          "newValue": 747933,
+          "oldValue": 747932
+        }
+      },
+      "id": 469,
+      "rev": 459,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:22:42.797Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/469",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:22:42.797Z",
+          "oldValue": "2026-09-30T05:22:39.617Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:22:42.797Z",
+          "oldValue": "2026-09-30T05:22:39.617Z"
+        },
+        "System.CommentCount": {
+          "newValue": 115,
+          "oldValue": 116
+        },
+        "System.Rev": {
+          "newValue": 460,
+          "oldValue": 459
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:22:45.5Z",
+          "oldValue": "2026-09-30T05:22:42.797Z"
+        },
+        "System.Watermark": {
+          "newValue": 747934,
+          "oldValue": 747933
+        }
+      },
+      "id": 470,
+      "rev": 460,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:22:45.5Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/470",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:22:45.5Z",
+          "oldValue": "2026-09-30T05:22:42.797Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:22:45.5Z",
+          "oldValue": "2026-09-30T05:22:42.797Z"
+        },
+        "System.CommentCount": {
+          "newValue": 114,
+          "oldValue": 115
+        },
+        "System.Rev": {
+          "newValue": 461,
+          "oldValue": 460
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:35.187Z",
+          "oldValue": "2026-09-30T05:22:45.5Z"
+        },
+        "System.Watermark": {
+          "newValue": 747935,
+          "oldValue": 747934
+        }
+      },
+      "id": 471,
+      "rev": 461,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:35.187Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/471",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:35.187Z",
+          "oldValue": "2026-09-30T05:22:45.5Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:35.187Z",
+          "oldValue": "2026-09-30T05:22:45.5Z"
+        },
+        "System.CommentCount": {
+          "newValue": 113,
+          "oldValue": 114
+        },
+        "System.Rev": {
+          "newValue": 462,
+          "oldValue": 461
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:45.46Z",
+          "oldValue": "2026-09-30T05:23:35.187Z"
+        },
+        "System.Watermark": {
+          "newValue": 747936,
+          "oldValue": 747935
+        }
+      },
+      "id": 472,
+      "rev": 462,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:45.46Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/472",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:45.46Z",
+          "oldValue": "2026-09-30T05:23:35.187Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:45.46Z",
+          "oldValue": "2026-09-30T05:23:35.187Z"
+        },
+        "System.CommentCount": {
+          "newValue": 112,
+          "oldValue": 113
+        },
+        "System.Rev": {
+          "newValue": 463,
+          "oldValue": 462
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:48.03Z",
+          "oldValue": "2026-09-30T05:23:45.46Z"
+        },
+        "System.Watermark": {
+          "newValue": 747937,
+          "oldValue": 747936
+        }
+      },
+      "id": 473,
+      "rev": 463,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:48.03Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/473",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:48.03Z",
+          "oldValue": "2026-09-30T05:23:45.46Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:48.03Z",
+          "oldValue": "2026-09-30T05:23:45.46Z"
+        },
+        "System.CommentCount": {
+          "newValue": 111,
+          "oldValue": 112
+        },
+        "System.Rev": {
+          "newValue": 464,
+          "oldValue": 463
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:50.177Z",
+          "oldValue": "2026-09-30T05:23:48.03Z"
+        },
+        "System.Watermark": {
+          "newValue": 747938,
+          "oldValue": 747937
+        }
+      },
+      "id": 474,
+      "rev": 464,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:50.177Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/474",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:50.177Z",
+          "oldValue": "2026-09-30T05:23:48.03Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:50.177Z",
+          "oldValue": "2026-09-30T05:23:48.03Z"
+        },
+        "System.CommentCount": {
+          "newValue": 110,
+          "oldValue": 111
+        },
+        "System.Rev": {
+          "newValue": 465,
+          "oldValue": 464
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:52.407Z",
+          "oldValue": "2026-09-30T05:23:50.177Z"
+        },
+        "System.Watermark": {
+          "newValue": 747939,
+          "oldValue": 747938
+        }
+      },
+      "id": 475,
+      "rev": 465,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:52.407Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/475",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:52.407Z",
+          "oldValue": "2026-09-30T05:23:50.177Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:52.407Z",
+          "oldValue": "2026-09-30T05:23:50.177Z"
+        },
+        "System.CommentCount": {
+          "newValue": 109,
+          "oldValue": 110
+        },
+        "System.Rev": {
+          "newValue": 466,
+          "oldValue": 465
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:54.323Z",
+          "oldValue": "2026-09-30T05:23:52.407Z"
+        },
+        "System.Watermark": {
+          "newValue": 747940,
+          "oldValue": 747939
+        }
+      },
+      "id": 476,
+      "rev": 466,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:54.323Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/476",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:54.323Z",
+          "oldValue": "2026-09-30T05:23:52.407Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:54.323Z",
+          "oldValue": "2026-09-30T05:23:52.407Z"
+        },
+        "System.CommentCount": {
+          "newValue": 108,
+          "oldValue": 109
+        },
+        "System.Rev": {
+          "newValue": 467,
+          "oldValue": 466
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-09-30T05:23:56.283Z",
+          "oldValue": "2026-09-30T05:23:54.323Z"
+        },
+        "System.Watermark": {
+          "newValue": 747941,
+          "oldValue": 747940
+        }
+      },
+      "id": 477,
+      "rev": 467,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "2026-09-30T05:23:56.283Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/477",
+      "workItemId": 33828
+    },
+    {
+      "fields": {
+        "System.AuthorizedDate": {
+          "newValue": "2026-09-30T05:23:56.283Z",
+          "oldValue": "2026-09-30T05:23:54.323Z"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-09-30T05:23:56.283Z",
+          "oldValue": "2026-09-30T05:23:54.323Z"
+        },
+        "System.CommentCount": {
+          "newValue": 107,
+          "oldValue": 108
+        },
+        "System.Rev": {
+          "newValue": 468,
+          "oldValue": 467
+        },
+        "System.RevisedDate": {
+          "newValue": "9999-01-01T00:00:00Z",
+          "oldValue": "2026-09-30T05:23:56.283Z"
+        },
+        "System.Watermark": {
+          "newValue": 747942,
+          "oldValue": 747941
+        }
+      },
+      "id": 478,
+      "rev": 468,
+      "revisedBy": {
+        "_links": {
+          "avatar": {
+            "href": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi"
+          }
+        },
+        "descriptor": "aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "displayName": "App",
+        "id": "e95020c7-3d91-6b43-90ad-769112b6823b",
+        "imageUrl": "https://dev.azure.com/shepherdcmms/_apis/GraphProfile/MemberAvatars/aad.ZTk1MDIwYzctM2Q5MS03YjQzLTkwYWQtNzY5MTEyYjY4MjNi",
+        "name": "App <dev@shepherd.build>",
+        "uniqueName": "dev@shepherd.build",
+        "url": "https://spsproduks1.vssps.visualstudio.com/Ad0791343-a9c8-4fea-b1d9-4a09712b5e15/_apis/Identities/e95020c7-3d91-6b43-90ad-769112b6823b"
+      },
+      "revisedDate": "9999-01-01T00:00:00Z",
+      "url": "https://dev.azure.com/shepherdcmms/f24df8c3-68b9-4ee8-873b-ee560910bd4f/_apis/wit/workItems/33828/updates/478",
+      "workItemId": 33828
+    }
+  ]
+}

@@ -346,6 +346,22 @@ function parsePositiveInteger(value) {
   return parsed;
 }
 
+function normalizeChangedFieldNames(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => normalizeString(v))
+    .filter((v) => v.length > 0);
+}
+
+function getChangedFieldNames(update) {
+  return Object.keys(update?.fields || {});
+}
+
+function getTrackedFieldsChanged(update, trackedFields = []) {
+  const tracked = new Set(trackedFields.map((f) => normalizeString(f).toLowerCase()));
+  return getChangedFieldNames(update).filter((field) => tracked.has(normalizeString(field).toLowerCase()));
+}
+
 function getWorkItemId(eventPayload, options = {}) {
   const { logResolution = true } = options;
   const fromInput = normalizeString(process.env.WORK_ITEM_ID);
@@ -390,13 +406,24 @@ function getWorkItemId(eventPayload, options = {}) {
   throw new Error("Could not determine work item ID from workflow input or repository_dispatch payload.");
 }
 
-function getRevisionHint(eventPayload) {
+function getRevisionHint(eventPayload, options = {}) {
+  const { strictDispatchContract = false } = options;
   const cp = eventPayload.client_payload || {};
   const resource = cp.resource || {};
 
+  const contractRevision = parsePositiveInteger(cp.revision_hint);
+  if (contractRevision !== null) {
+    console.log(`Resolved revision hint from client_payload.revision_hint: ${contractRevision}`);
+    return contractRevision;
+  }
+
+  if (strictDispatchContract) {
+    return null;
+  }
+
   const candidates = [
-    { source: "client_payload.resource.revision.rev", value: resource.revision?.rev },
     { source: "client_payload.resource.rev", value: resource.rev },
+    { source: "client_payload.resource.revision.rev", value: resource.revision?.rev },
     { source: "client_payload.resource.revision.fields.System.Rev", value: resource.revision?.fields?.["System.Rev"] },
     { source: "client_payload.revision_hint", value: cp.revision_hint }
   ];
@@ -434,15 +461,12 @@ function updateTouchesTrackedFields(update, trackedFields = []) {
   return changedFields.some((f) => tracked.has(f));
 }
 
-async function analyzeStaleRevisionConflict({
-  orgUrl,
-  project,
-  pat,
-  workItemId,
+function analyzeStaleRevisionConflictFromUpdates({
   revisionHint,
   currentRevision,
   trackedFields,
-  maxScan
+  maxScan,
+  updatesByRevision
 }) {
   const gap = currentRevision - revisionHint;
   if (gap <= 0) {
@@ -462,7 +486,10 @@ async function analyzeStaleRevisionConflict({
 
   const conflicts = [];
   for (let rev = revisionHint + 1; rev <= currentRevision; rev += 1) {
-    const update = await getUpdateByRevision(orgUrl, project, pat, workItemId, rev);
+    const update = updatesByRevision.get(rev);
+    if (!update) {
+      continue;
+    }
     if (updateTouchesTrackedFields(update, trackedFields)) {
       conflicts.push({
         rev,
@@ -479,6 +506,31 @@ async function analyzeStaleRevisionConflict({
     gap,
     maxScan
   };
+}
+
+async function analyzeStaleRevisionConflict({
+  orgUrl,
+  project,
+  pat,
+  workItemId,
+  revisionHint,
+  currentRevision,
+  trackedFields,
+  maxScan
+}) {
+  const updatesByRevision = new Map();
+  for (let rev = revisionHint + 1; rev <= currentRevision; rev += 1) {
+    const update = await getUpdateByRevision(orgUrl, project, pat, workItemId, rev);
+    updatesByRevision.set(rev, update);
+  }
+
+  return analyzeStaleRevisionConflictFromUpdates({
+    revisionHint,
+    currentRevision,
+    trackedFields,
+    maxScan,
+    updatesByRevision
+  });
 }
 
 function resolveAutomationActors() {
@@ -587,6 +639,12 @@ function filterNoopPatchOps(patchOps, fields) {
   return effective;
 }
 
+function buildRuleOperationKey({ workItemId, triggerRevision, ruleName }) {
+  const revisionPart = parsePositiveInteger(triggerRevision) || "manual";
+  const normalizedRuleName = normalizeString(ruleName).toLowerCase().replace(/[^a-z0-9._:-]/g, "-");
+  return `${workItemId}:${revisionPart}:${normalizedRuleName}`;
+}
+
 function buildNotificationAutomationKey({ workItemId, triggerRevision, notificationType, recipient }) {
   const revisionPart = parsePositiveInteger(triggerRevision) || "manual";
   const typePart = normalizeString(notificationType).toLowerCase().replace(/\s+/g, "-");
@@ -605,6 +663,55 @@ function extractAutomationKeys(text) {
     }
   }
   return keys;
+}
+
+function extractOperationKeys(text) {
+  const keys = [];
+  const raw = String(text || "");
+  const regex = /operation-key:([a-z0-9:._@-]+)/gi;
+  let match;
+  while ((match = regex.exec(raw)) !== null) {
+    if (match[1]) {
+      keys.push(match[1].toLowerCase());
+    }
+  }
+  return keys;
+}
+
+function toAdoPatchOps(patchOps) {
+  return patchOps.map((op) => ({
+    op: op.op,
+    path: op.path,
+    value: op.value
+  }));
+}
+
+function logCompactSummary({
+  runStatus,
+  exitStatus,
+  workItemId,
+  triggerRevision,
+  currentRevision,
+  revisedBy,
+  trackedFieldsChanged,
+  rulesFired,
+  actionKeys
+}) {
+  const tracked = Array.isArray(trackedFieldsChanged) && trackedFieldsChanged.length ? trackedFieldsChanged.join("|") : "none";
+  const rules = Array.isArray(rulesFired) && rulesFired.length ? rulesFired.join("|") : "none";
+  const keys = Array.isArray(actionKeys) && actionKeys.length ? actionKeys.join("|") : "none";
+  const summary = [
+    `wi=${workItemId || "unknown"}`,
+    `triggerRev=${triggerRevision ?? "na"}`,
+    `currentRev=${currentRevision ?? "na"}`,
+    `revisedBy=${revisedBy || "unknown"}`,
+    `tracked=${tracked}`,
+    `rules=${rules}`,
+    `actionKeys=${keys}`,
+    `run=${runStatus || "unknown"}`,
+    `exit=${exitStatus || "unknown"}`
+  ].join(" ");
+  console.log(`RUN SUMMARY: ${summary}`);
 }
 
 function getField(fields, refName) {
@@ -626,11 +733,26 @@ function getTransition(update, refName) {
   };
 }
 
-function patchOp(pathRef, value) {
-  return {
+function patchOp(pathRef, value, ruleName = "") {
+  const op = {
     op: "add",
     path: `/fields/${pathRef}`,
     value
+  };
+
+  if (ruleName) {
+    op.ruleName = ruleName;
+  }
+
+  return op;
+}
+
+function makeNotification(type, to, message, ruleName = "") {
+  return {
+    type,
+    to,
+    message,
+    ruleName
   };
 }
 
@@ -670,6 +792,13 @@ function resolvePmRecipient(areaPath, pmByAreaPath = {}) {
 }
 
 function buildActions({ workItem, update, configObj, testMode }) {
+  const RULES = {
+    BILLABLE_TO_PENDING_HOURS: "billable-to-pending-hours",
+    ESTIMATE_TO_PENDING_QUOTE: "estimate-to-pending-quote",
+    PENDING_QUOTE_NOTIFICATION: "pending-quote-notification",
+    RELEASED_FOR_DEV: "released-for-development"
+  };
+
   const refs = configObj.fieldRefs;
   const quoteValues = configObj.quoteStatusValues;
   const stateValues = configObj.stateValues;
@@ -714,13 +843,13 @@ function buildActions({ workItem, update, configObj, testMode }) {
   if (billableTransition.changed && !isYes(billableTransition.oldValue) && isYes(billableTransition.newValue)) {
     const canMoveToPendingHours = isEmpty(currentQuoteStatus) || /not needed/i.test(currentQuoteStatus);
     if (canMoveToPendingHours) {
-      patchOps.push(patchOp(refs.quoteStatus, quoteValues.pendingHours));
-      patchOps.push(patchOp(refs.state, stateValues.quoteInProgress));
+      patchOps.push(patchOp(refs.quoteStatus, quoteValues.pendingHours, RULES.BILLABLE_TO_PENDING_HOURS));
+      patchOps.push(patchOp(refs.state, stateValues.quoteInProgress, RULES.BILLABLE_TO_PENDING_HOURS));
     }
   }
 
   if (estimateWasEntered(update, configObj.estimateFields) && currentQuoteStatus === quoteValues.pendingHours) {
-    patchOps.push(patchOp(refs.quoteStatus, quoteValues.pendingQuote));
+    patchOps.push(patchOp(refs.quoteStatus, quoteValues.pendingQuote, RULES.ESTIMATE_TO_PENDING_QUOTE));
     willSetPendingQuote = true;
   }
 
@@ -728,11 +857,14 @@ function buildActions({ workItem, update, configObj, testMode }) {
     quoteStatusTransition.changed && normalizeString(quoteStatusTransition.newValue) === quoteValues.pendingQuote;
 
   if (transitionedToPendingQuote || willSetPendingQuote) {
-    notifications.push({
-      type: "quote-ready",
-      to: configObj.emails.quoteReadyTo,
-      message: `Work item #${workItem.id} (${title}) changed to '${quoteValues.pendingQuote}'.\nArea: ${areaPath}`
-    });
+    notifications.push(
+      makeNotification(
+        "quote-ready",
+        configObj.emails.quoteReadyTo,
+        `Work item #${workItem.id} (${title}) changed to '${quoteValues.pendingQuote}'.\nArea: ${areaPath}`,
+        RULES.PENDING_QUOTE_NOTIFICATION
+      )
+    );
   }
 
   if (
@@ -743,16 +875,19 @@ function buildActions({ workItem, update, configObj, testMode }) {
     const pmEmail = resolvePmRecipient(areaPath, configObj?.emails?.pmByAreaPath || {});
     if (pmEmail || testMode) {
       const recipients = pmEmail ? [pmEmail] : ["no-recipient-mapped-in-test-mode@local"];
-      notifications.push({
-        type: "released-for-development",
-        to: recipients,
-        message: `Work item #${workItem.id} (${title}) was released for development.\nArea: ${areaPath}`
-      });
+      notifications.push(
+        makeNotification(
+          "released-for-development",
+          recipients,
+          `Work item #${workItem.id} (${title}) was released for development.\nArea: ${areaPath}`,
+          RULES.RELEASED_FOR_DEV
+        )
+      );
     } else {
       console.log(`No PM mapping found for area path '${areaPath}'. Skipping released-for-development comment.`);
     }
 
-    patchOps.push(patchOp(refs.state, stateValues.new));
+    patchOps.push(patchOp(refs.state, stateValues.new, RULES.RELEASED_FOR_DEV));
   }
 
   return {
@@ -833,21 +968,42 @@ function applyTestRecipientOverride(notifications, overrideEmail) {
   }));
 }
 
-async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUrl, notifications, triggerRevision }) {
+async function addMentionComments({
+  orgUrl,
+  project,
+  pat,
+  workItemId,
+  workItemUrl,
+  notifications,
+  triggerRevision,
+  existingCommentItems = null,
+  operationKeysByRule = new Map()
+}) {
   if (!notifications.length) {
     return [];
   }
 
   const results = [];
-  const existingComments = await getRecentWorkItemComments(orgUrl, project, pat, workItemId, 200);
-  const commentItems = Array.isArray(existingComments?.comments)
-    ? existingComments.comments
-    : Array.isArray(existingComments?.value)
-      ? existingComments.value
-      : [];
+  let commentItems = existingCommentItems;
+  if (!Array.isArray(commentItems)) {
+    const existingComments = await getRecentWorkItemComments(orgUrl, project, pat, workItemId, 200);
+    commentItems = Array.isArray(existingComments?.comments)
+      ? existingComments.comments
+      : Array.isArray(existingComments?.value)
+        ? existingComments.value
+        : [];
+  }
+
+  const resolvedCommentItems = Array.isArray(commentItems)
+    ? commentItems
+    : Array.isArray(commentItems?.comments)
+      ? commentItems.comments
+      : Array.isArray(commentItems?.value)
+        ? commentItems.value
+        : [];
 
   const seenKeys = new Set();
-  for (const comment of commentItems) {
+  for (const comment of resolvedCommentItems) {
     for (const key of extractAutomationKeys(comment?.text)) {
       seenKeys.add(key);
     }
@@ -867,6 +1023,15 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         notificationType: notification.type,
         recipient: email
       });
+
+      const notificationRuleName = normalizeString(notification.ruleName) || normalizeString(notification.type);
+      const operationKey =
+        operationKeysByRule.get(notificationRuleName) ||
+        buildRuleOperationKey({
+          workItemId,
+          triggerRevision,
+          ruleName: notificationRuleName || "notification"
+        });
 
       if (seenKeys.has(automationKey.toLowerCase())) {
         results.push({
@@ -912,7 +1077,7 @@ async function addMentionComments({ orgUrl, project, pat, workItemId, workItemUr
         : `@${escapeHtml(email)}`;
 
       const messageHtml = escapeHtml(notification.message).replace(/\n/g, "<br>");
-      const text = `${mentionMarkup}<br>${messageHtml}<br><br><i>This is an automated message.</i><br><code>${AUTOMATION_KEY_PREFIX}${escapeHtml(automationKey)}</code>`;
+      const text = `${mentionMarkup}<br>${messageHtml}<br><br><i>This is an automated message.</i><br><code>operation-key:${escapeHtml(operationKey)}</code><br><code>${AUTOMATION_KEY_PREFIX}${escapeHtml(automationKey)}</code>`;
       const comment = await addWorkItemComment(orgUrl, project, pat, workItemId, text);
       seenKeys.add(automationKey.toLowerCase());
 
@@ -949,11 +1114,16 @@ async function main() {
     console.log("Event payload preview: <omitted; set VERBOSE_LOGS=true to print full payload>");
   }
 
+  const cp = eventPayload.client_payload || {};
   const workItemId = getWorkItemId(eventPayload);
-  const revisionHint = getRevisionHint(eventPayload);
+  const revisionHint = getRevisionHint(eventPayload, { strictDispatchContract: !isManualDispatch });
   const dryRun = resolveDryRun(eventPayload);
   const testMode = resolveTestMode(eventPayload);
   const testEmailOverride = normalizeString(process.env.TEST_EMAIL_OVERRIDE);
+  const contractEventId = normalizeString(cp.eventId || cp.event_id || "");
+  const contractRevisedBy =
+    normalizeString(cp.revisedBy?.uniqueName || cp.revisedBy?.name || cp.revisedBy?.displayName || "") || "<unknown>";
+  const contractChangedFieldNames = normalizeChangedFieldNames(cp.changedFieldNames);
 
   const fieldsToFetch = [
     config.fieldRefs.workItemType,
@@ -990,15 +1160,47 @@ async function main() {
 
   let workItem;
   let relevantUpdate;
+  let currentRevision = null;
+  const runSummary = {
+    workItemId,
+    triggerRevision: revisionHint,
+    currentRevision: null,
+    revisedBy: contractRevisedBy,
+    trackedFieldsChanged: contractChangedFieldNames,
+    rulesFired: [],
+    actionKeys: []
+  };
+  const emitSummary = (runStatus, exitStatus, overrides = {}) => {
+    logCompactSummary({
+      ...runSummary,
+      ...overrides,
+      runStatus,
+      exitStatus
+    });
+  };
+
+  if (!isManualDispatch && revisionHint === null) {
+    console.log("RUN STATUS: REVISION_GUARD");
+    console.log("EXIT STATUS: SKIPPED_MISSING_REVISION_HINT");
+    console.log("Missing revision_hint in repository_dispatch payload. Skipping to enforce strict event contract.");
+    emitSummary("REVISION_GUARD", "SKIPPED_MISSING_REVISION_HINT");
+    return;
+  }
+
+  if (!isEmpty(contractEventId)) {
+    console.log(`Event id from relay payload: ${contractEventId}`);
+  }
   try {
     workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
-    const currentRevision = parsePositiveInteger(workItem?.rev);
+    currentRevision = parsePositiveInteger(workItem?.rev);
+    runSummary.currentRevision = currentRevision;
 
     if (revisionHint !== null) {
       if (currentRevision !== null && revisionHint > currentRevision) {
         console.log("RUN STATUS: REVISION_GUARD");
         console.log("EXIT STATUS: SKIPPED_INVALID_REVISION_HINT");
         console.log(`Revision hint ${revisionHint} is ahead of current revision ${currentRevision}.`);
+        emitSummary("REVISION_GUARD", "SKIPPED_INVALID_REVISION_HINT");
         return;
       }
       relevantUpdate = await getUpdateByRevision(orgUrl, project, pat, workItemId, revisionHint);
@@ -1022,10 +1224,12 @@ async function main() {
             console.log(
               `Revision hint ${revisionHint} is stale by ${staleAnalysis.gap} revisions and exceeds scan limit ${staleAnalysis.maxScan}.`
             );
+            emitSummary("REVISION_GUARD", "SKIPPED_STALE_SCAN_LIMIT");
           } else {
             console.log("EXIT STATUS: SKIPPED_STALE_EVENT");
             const revisions = staleAnalysis.conflicts.map((c) => `${c.rev}:${c.revisedBy}`).join(", ");
             console.log(`Stale revision ${revisionHint} conflicts with tracked-field changes in later revisions: ${revisions}`);
+            emitSummary("REVISION_GUARD", "SKIPPED_STALE_EVENT");
           }
           return;
         }
@@ -1046,6 +1250,7 @@ async function main() {
       console.log("RUN STATUS: REVISION_GUARD");
       console.log("EXIT STATUS: SKIPPED_MISSING_REVISION_HINT");
       console.log("Missing revision hint for non-manual event. Skipping to avoid replaying historical revisions.");
+      emitSummary("REVISION_GUARD", "SKIPPED_MISSING_REVISION_HINT");
       return;
     }
   } catch (error) {
@@ -1053,6 +1258,7 @@ async function main() {
       console.log("EXIT STATUS: SKIPPED_INACCESSIBLE_WORK_ITEM");
       console.log(`Skipping work item ${workItemId}: inaccessible, deleted, or outside permissions.`);
       console.log(String(error?.message || error));
+      emitSummary("REVISION_GUARD", "SKIPPED_INACCESSIBLE_WORK_ITEM");
       return;
     }
     throw error;
@@ -1062,14 +1268,18 @@ async function main() {
     console.log("RUN STATUS: REVISION_GUARD");
     console.log("EXIT STATUS: SKIPPED_UPDATE_NOT_FOUND");
     console.log("Unable to resolve relevant update revision for this event.");
+    emitSummary("REVISION_GUARD", "SKIPPED_UPDATE_NOT_FOUND");
     return;
   }
 
   const revisedBy = normalizeEmail(relevantUpdate?.revisedBy?.uniqueName || relevantUpdate?.revisedBy?.name || "");
+  runSummary.revisedBy = revisedBy || runSummary.revisedBy;
+  runSummary.trackedFieldsChanged = getTrackedFieldsChanged(relevantUpdate, trackedFields);
   if (revisedBy && automationActors.has(revisedBy)) {
     console.log("RUN STATUS: SELF_UPDATE_GUARD");
     console.log("EXIT STATUS: SKIPPED_AUTOMATION_SELF_UPDATE");
     console.log(`Update revision ${relevantUpdate.rev} was produced by automation actor '${revisedBy}'.`);
+    emitSummary("SELF_UPDATE_GUARD", "SKIPPED_AUTOMATION_SELF_UPDATE");
     return;
   }
 
@@ -1078,6 +1288,7 @@ async function main() {
     console.log("EXIT STATUS: SKIPPED_NO_RELEVANT_FIELD_CHANGE");
     console.log(`Update revision ${relevantUpdate.rev} did not modify tracked fields.`);
     logRevisionChangeDetails(relevantUpdate);
+    emitSummary("NO_RELEVANT_FIELD_CHANGE", "SKIPPED_NO_RELEVANT_FIELD_CHANGE");
     return;
   }
 
@@ -1095,20 +1306,84 @@ async function main() {
     console.log("RUN STATUS: NO_TRIGGER_MATCH");
     console.log("EXIT STATUS: SKIPPED_NO_TRIGGER");
     console.log(actions.reason);
+    emitSummary("NO_TRIGGER_MATCH", "SKIPPED_NO_TRIGGER");
     return;
   }
 
   console.log("RUN STATUS: TRIGGER_MATCHED");
 
-  const effectivePatchOps = filterNoopPatchOps(actions.patchOps, workItem.fields || {});
+  let effectivePatchOps = filterNoopPatchOps(actions.patchOps, workItem.fields || {});
   if (actions.patchOps.length !== effectivePatchOps.length) {
     console.log(`Filtered out ${actions.patchOps.length - effectivePatchOps.length} no-op patch operation(s).`);
+  }
+
+  let notificationsToSend = testMode
+    ? applyTestRecipientOverride(actions.notifications, testEmailOverride)
+    : actions.notifications;
+
+  const requestedRuleNames = Array.from(
+    new Set([
+      ...effectivePatchOps.map((op) => normalizeString(op.ruleName)),
+      ...notificationsToSend.map((notification) => normalizeString(notification.ruleName || notification.type))
+    ].filter((ruleName) => ruleName.length > 0))
+  );
+  const operationKeysByRule = new Map(
+    requestedRuleNames.map((ruleName) => [
+      ruleName,
+      buildRuleOperationKey({
+        workItemId,
+        triggerRevision: relevantUpdate.rev,
+        ruleName
+      })
+    ])
+  );
+  runSummary.rulesFired = requestedRuleNames;
+  runSummary.actionKeys = Array.from(operationKeysByRule.values());
+
+  let existingCommentItems = null;
+  if (!dryRun && requestedRuleNames.length) {
+    const existingComments = await getRecentWorkItemComments(orgUrl, project, pat, workItemId, 200);
+    existingCommentItems = Array.isArray(existingComments?.comments)
+      ? existingComments.comments
+      : Array.isArray(existingComments?.value)
+        ? existingComments.value
+        : [];
+
+    const seenOperationKeys = new Set();
+    for (const comment of existingCommentItems) {
+      for (const opKey of extractOperationKeys(comment?.text)) {
+        seenOperationKeys.add(opKey.toLowerCase());
+      }
+    }
+
+    const duplicateRuleNames = requestedRuleNames.filter((ruleName) => {
+      const operationKey = normalizeString(operationKeysByRule.get(ruleName)).toLowerCase();
+      return operationKey && seenOperationKeys.has(operationKey);
+    });
+
+    if (duplicateRuleNames.length) {
+      const duplicateSet = new Set(duplicateRuleNames);
+      effectivePatchOps = effectivePatchOps.filter((op) => !duplicateSet.has(normalizeString(op.ruleName)));
+      notificationsToSend = notificationsToSend.filter(
+        (notification) => !duplicateSet.has(normalizeString(notification.ruleName || notification.type))
+      );
+      console.log(`Skipped duplicate operation key(s) for rules: ${duplicateRuleNames.join(", ")}`);
+    }
   }
 
   if (!effectivePatchOps.length && !actions.notifications.length) {
     console.log("RUN STATUS: TRIGGER_MATCHED_NO_ACTION");
     console.log("EXIT STATUS: SKIPPED_NO_ACTION");
     console.log("Trigger matched, but no field updates or notifications were required.");
+    emitSummary("TRIGGER_MATCHED_NO_ACTION", "SKIPPED_NO_ACTION");
+    return;
+  }
+
+  if (!effectivePatchOps.length && !notificationsToSend.length) {
+    console.log("RUN STATUS: IDEMPOTENCY_GUARD");
+    console.log("EXIT STATUS: SKIPPED_DUPLICATE_OPERATION");
+    console.log("All actions were already applied for this work item revision and rule set.");
+    emitSummary("IDEMPOTENCY_GUARD", "SKIPPED_DUPLICATE_OPERATION");
     return;
   }
 
@@ -1118,10 +1393,6 @@ async function main() {
   if (effectivePatchOps.length) {
     console.log(JSON.stringify(effectivePatchOps, null, 2));
   }
-
-  const notificationsToSend = testMode
-    ? applyTestRecipientOverride(actions.notifications, testEmailOverride)
-    : actions.notifications;
 
   console.log(`Notifications: ${notificationsToSend.length}`);
   if (notificationsToSend.length) {
@@ -1136,7 +1407,7 @@ async function main() {
 
   if (!dryRun) {
     if (effectivePatchOps.length) {
-      await patchWorkItem(orgUrl, project, pat, workItemId, effectivePatchOps);
+      await patchWorkItem(orgUrl, project, pat, workItemId, toAdoPatchOps(effectivePatchOps));
       console.log("Work item patch applied.");
     }
 
@@ -1148,7 +1419,9 @@ async function main() {
         workItemId,
         workItemUrl,
         notifications: notificationsToSend,
-        triggerRevision: relevantUpdate.rev
+        triggerRevision: relevantUpdate.rev,
+        existingCommentItems,
+        operationKeysByRule
       });
       console.log("Mention comments added:");
       console.log(JSON.stringify(comments, null, 2));
@@ -1159,10 +1432,28 @@ async function main() {
 
   console.log("EXIT STATUS: EXECUTED");
   console.log(`Done. Work item URL: ${workItemUrl}`);
+  emitSummary("TRIGGER_MATCHED", "EXECUTED", {
+    triggerRevision: relevantUpdate.rev,
+    currentRevision
+  });
 }
 
-main().catch((error) => {
-  console.error("Automation run failed.");
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("Automation run failed.");
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  config,
+  parsePositiveInteger,
+  updateTouchesTrackedFields,
+  getTrackedFieldsChanged,
+  analyzeStaleRevisionConflictFromUpdates,
+  buildActions,
+  buildRuleOperationKey,
+  extractOperationKeys,
+  filterNoopPatchOps
+};
