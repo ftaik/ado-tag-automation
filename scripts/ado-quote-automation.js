@@ -220,14 +220,41 @@ async function getUpdates(orgUrl, project, pat, id) {
   });
 }
 
-async function getUpdateByRevision(orgUrl, project, pat, id, revision) {
+async function getUpdateById(orgUrl, project, pat, id, updateId) {
   return adoRequest({
     method: "GET",
     orgUrl,
     project,
     pat,
-    endpoint: `/_apis/wit/workitems/${id}/updates/${revision}?api-version=7.1`
+    endpoint: `/_apis/wit/workitems/${id}/updates/${updateId}?api-version=7.1`
   });
+}
+
+function buildUpdatesByRevisionMap(updatesResponse) {
+  const updateList = Array.isArray(updatesResponse?.value) ? updatesResponse.value : [];
+  const map = new Map();
+
+  for (const update of updateList) {
+    const rev = parsePositiveInteger(update?.rev);
+    if (rev === null) {
+      continue;
+    }
+
+    if (!map.has(rev)) {
+      map.set(rev, update);
+    }
+  }
+
+  return map;
+}
+
+function getUpdateByRevision(updatesByRevision, revision) {
+  const normalizedRevision = parsePositiveInteger(revision);
+  if (normalizedRevision === null) {
+    return null;
+  }
+
+  return updatesByRevision.get(normalizedRevision) || null;
 }
 
 async function resolveIdentityByEmail(orgUrl, pat, email) {
@@ -518,11 +545,8 @@ async function analyzeStaleRevisionConflict({
   trackedFields,
   maxScan
 }) {
-  const updatesByRevision = new Map();
-  for (let rev = revisionHint + 1; rev <= currentRevision; rev += 1) {
-    const update = await getUpdateByRevision(orgUrl, project, pat, workItemId, rev);
-    updatesByRevision.set(rev, update);
-  }
+  const updatesResponse = await getUpdates(orgUrl, project, pat, workItemId);
+  const updatesByRevision = buildUpdatesByRevisionMap(updatesResponse);
 
   return analyzeStaleRevisionConflictFromUpdates({
     revisionHint,
@@ -1161,6 +1185,7 @@ async function main() {
   let workItem;
   let relevantUpdate;
   let currentRevision = null;
+  let updatesByRevision = null;
   const runSummary = {
     workItemId,
     triggerRevision: revisionHint,
@@ -1194,6 +1219,8 @@ async function main() {
     workItem = await getWorkItemWithFieldFallback(orgUrl, project, pat, workItemId, fieldsToFetch);
     currentRevision = parsePositiveInteger(workItem?.rev);
     runSummary.currentRevision = currentRevision;
+    const updatesResponse = await getUpdates(orgUrl, project, pat, workItemId);
+    updatesByRevision = buildUpdatesByRevisionMap(updatesResponse);
 
     if (revisionHint !== null) {
       if (currentRevision !== null && revisionHint > currentRevision) {
@@ -1203,18 +1230,23 @@ async function main() {
         emitSummary("REVISION_GUARD", "SKIPPED_INVALID_REVISION_HINT");
         return;
       }
-      relevantUpdate = await getUpdateByRevision(orgUrl, project, pat, workItemId, revisionHint);
+      relevantUpdate = getUpdateByRevision(updatesByRevision, revisionHint);
+
+      if (!relevantUpdate) {
+        console.log("RUN STATUS: REVISION_GUARD");
+        console.log("EXIT STATUS: SKIPPED_UPDATE_NOT_FOUND");
+        console.log(`Could not find an update row with rev ${revisionHint}. Event may reference an unavailable revision.`);
+        emitSummary("REVISION_GUARD", "SKIPPED_UPDATE_NOT_FOUND");
+        return;
+      }
 
       if (currentRevision !== null && revisionHint < currentRevision) {
-        const staleAnalysis = await analyzeStaleRevisionConflict({
-          orgUrl,
-          project,
-          pat,
-          workItemId,
+        const staleAnalysis = analyzeStaleRevisionConflictFromUpdates({
           revisionHint,
           currentRevision,
           trackedFields,
-          maxScan: staleScanLimit
+          maxScan: staleScanLimit,
+          updatesByRevision
         });
 
         if (!staleAnalysis.canProcess) {
@@ -1241,10 +1273,9 @@ async function main() {
     } else if (isManualDispatch) {
       const manualRevision = parsePositiveInteger(workItem?.rev);
       if (manualRevision !== null) {
-        relevantUpdate = await getUpdateByRevision(orgUrl, project, pat, workItemId, manualRevision);
+        relevantUpdate = getUpdateByRevision(updatesByRevision, manualRevision);
       } else {
-        const updates = await getUpdates(orgUrl, project, pat, workItemId);
-        relevantUpdate = pickRelevantUpdate(updates, null);
+        relevantUpdate = pickRelevantUpdate({ value: Array.from(updatesByRevision.values()) }, null);
       }
     } else {
       console.log("RUN STATUS: REVISION_GUARD");
